@@ -21,7 +21,7 @@ function emptyMeal() {
 }
 
 function emptyNormalSets() {
-  return [{ weight: '', reps: '' }, { weight: '', reps: '' }, { weight: '', reps: '' }]
+  return [{ weight: '', reps: '' }]
 }
 
 function emptyClusterSet() {
@@ -341,8 +341,18 @@ export default function Library() {
                     placeholder="reps"
                   />
                 </div>
+                {normalSets.length > 1 && (
+                  <button
+                    className="remove-set-btn"
+                    onClick={() => setNormalSets(sets => sets.filter((_, j) => j !== i))}
+                  >×</button>
+                )}
               </div>
             ))}
+            <button
+              className="add-set-btn"
+              onClick={() => setNormalSets(sets => [...sets, { weight: '', reps: '' }])}
+            >+ Add Set</button>
           </div>
         )}
 
