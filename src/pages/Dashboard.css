@@ -120,13 +120,14 @@
 }
 
 .settings-btn {
-  background: none;
+  background: none !important;
   border: none;
   font-size: 20px;
   color: var(--text-secondary);
   padding: 4px 8px;
   cursor: pointer;
   line-height: 1;
+  border-radius: 0;
 }
 
 /* Macro bars */
