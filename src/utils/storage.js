@@ -4,6 +4,7 @@ const KEYS = {
   exerciseLogs: 'gl_exercise_logs', // sets/reps logs per exercise
   meals: 'gl_meals',
   nutritionLog: 'gl_nutrition_log',
+  profile: 'gl_profile',
 }
 
 function load(key) {
@@ -57,6 +58,15 @@ export function getNutritionLog() {
 }
 export function saveNutritionLog(list) {
   save(KEYS.nutritionLog, list)
+}
+
+// User profile (BMR, NEAT)
+const DEFAULT_PROFILE = { bmr: 1880, neat: 350 }
+export function getProfile() {
+  return { ...DEFAULT_PROFILE, ...(load(KEYS.profile) || {}) }
+}
+export function saveProfile(profile) {
+  save(KEYS.profile, profile)
 }
 
 export function generateId() {

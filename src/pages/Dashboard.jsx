@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
-import { getNutritionLog, getSessions, todayKey } from '../utils/storage'
+import Sheet from '../components/Sheet'
+import { FormField, NumberInput, PrimaryButton } from '../components/FormField'
+import { getNutritionLog, getSessions, getProfile, saveProfile, todayKey } from '../utils/storage'
 import './Dashboard.css'
 
 function formatDate(key) {
@@ -10,6 +12,12 @@ function formatDate(key) {
 export default function Dashboard() {
   const [log] = useState(getNutritionLog)
   const [sessions] = useState(getSessions)
+  const [profile, setProfile] = useState(getProfile)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [profileForm, setProfileForm] = useState(() => {
+    const p = getProfile()
+    return { bmr: String(p.bmr), neat: String(p.neat) }
+  })
 
   const selectedDate = todayKey()
 
@@ -28,12 +36,13 @@ export default function Dashboard() {
     { calories: 0, carbs: 0, protein: 0, fat: 0 }
   )
 
-  const burned = useMemo(
+  const exerciseCalories = useMemo(
     () => sessions.filter(s => s.date === selectedDate).reduce((sum, s) => sum + s.calories, 0),
     [sessions, selectedDate]
   )
 
-  const net = totals.calories - burned
+  const totalBurn = profile.bmr + profile.neat + exerciseCalories
+  const net = totals.calories - totalBurn
   const totalMacroG = totals.carbs + totals.protein + totals.fat
 
   function macroPercent(g) {
@@ -41,9 +50,23 @@ export default function Dashboard() {
     return Math.round((g / totalMacroG) * 100)
   }
 
+  function saveSettings() {
+    const updated = { bmr: Number(profileForm.bmr), neat: Number(profileForm.neat) }
+    saveProfile(updated)
+    setProfile(updated)
+    setSettingsOpen(false)
+  }
+
+  const canSaveSettings = profileForm.bmr !== '' && profileForm.neat !== ''
+
   return (
     <div className="page">
-      <PageHeader title="Dashboard" />
+      <PageHeader
+        title="Dashboard"
+        action={
+          <button className="settings-btn" onClick={() => setSettingsOpen(true)}>⚙</button>
+        }
+      />
       <div className="page-body scroll-area">
         <div className="date-chip">{formatDate(selectedDate)}</div>
 
@@ -57,19 +80,27 @@ export default function Dashboard() {
             </div>
             <div className="cal-meta">
               <div className="cal-meta-row">
-                <span className="cal-meta-label">Burned</span>
-                <span className="cal-meta-val burned">{burned}</span>
+                <span className="cal-meta-label">Total Burned</span>
+                <span className="cal-meta-val burned">{totalBurn}</span>
+              </div>
+              <div className="cal-burn-breakdown">
+                <span className="cal-breakdown-item">BMR {profile.bmr}</span>
+                <span className="cal-breakdown-sep">·</span>
+                <span className="cal-breakdown-item">NEAT {profile.neat}</span>
+                {exerciseCalories > 0 && (
+                  <>
+                    <span className="cal-breakdown-sep">·</span>
+                    <span className="cal-breakdown-item">Exercise {exerciseCalories}</span>
+                  </>
+                )}
               </div>
               <div className="cal-meta-divider" />
               <div className="cal-meta-row">
-                <span className="cal-meta-label">Net</span>
+                <span className="cal-meta-label">Balance</span>
                 <span className={`cal-meta-val net ${net > 0 ? 'positive' : net < 0 ? 'negative' : ''}`}>
                   {net > 0 ? '+' : ''}{net}
                 </span>
               </div>
-              {burned === 0 && (
-                <span className="burned-hint">Log workouts to see calories burned</span>
-              )}
             </div>
           </div>
         </div>
@@ -110,6 +141,29 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Settings sheet */}
+      <Sheet open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Profile">
+        <FormField label="BMR — Basal Metabolic Rate (kcal/day)">
+          <NumberInput
+            value={profileForm.bmr}
+            onChange={v => setProfileForm(f => ({ ...f, bmr: v }))}
+            placeholder="e.g. 1880"
+            min="0"
+          />
+        </FormField>
+        <FormField label="NEAT — Non-Exercise Activity (kcal/day)">
+          <NumberInput
+            value={profileForm.neat}
+            onChange={v => setProfileForm(f => ({ ...f, neat: v }))}
+            placeholder="e.g. 350"
+            min="0"
+          />
+        </FormField>
+        <PrimaryButton onClick={saveSettings} disabled={!canSaveSettings}>
+          Save
+        </PrimaryButton>
+      </Sheet>
     </div>
   )
 }
