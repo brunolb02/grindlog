@@ -1,0 +1,176 @@
+.date-chip {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+.dash-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.dash-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 14px;
+}
+
+/* Calories */
+.cal-ring-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.cal-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 5px solid var(--accent-orange);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cal-big {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--accent-orange);
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.cal-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.cal-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cal-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cal-meta-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.cal-meta-val {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.cal-meta-val.burned {
+  color: var(--accent-red);
+}
+
+.cal-meta-val.net.positive {
+  color: var(--accent-orange);
+}
+
+.cal-meta-val.net.negative {
+  color: var(--accent-green);
+}
+
+.cal-meta-divider {
+  height: 1px;
+  background: var(--separator);
+}
+
+.edit-burned-btn {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+  padding: 4px 0;
+  text-align: left;
+}
+
+/* Macro bars */
+.macro-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.macro-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.macro-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.macro-bar-val {
+  color: var(--text);
+}
+
+.macro-pct {
+  font-weight: 400;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.macro-bar-track {
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.macro-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* Today's meals */
+.dash-meal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--separator);
+}
+
+.dash-meal-row:last-child {
+  border-bottom: none;
+}
+
+.dash-meal-name {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.dash-meal-cal {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.burn-hint {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
