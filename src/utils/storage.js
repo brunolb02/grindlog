@@ -69,6 +69,37 @@ export function saveProfile(profile) {
   save(KEYS.profile, profile)
 }
 
+// Export / Import
+export function exportData() {
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    exercises: load(KEYS.exercises) || [],
+    sessions: load(KEYS.sessions) || [],
+    exerciseLogs: load(KEYS.exerciseLogs) || [],
+    meals: load(KEYS.meals) || [],
+    nutritionLog: load(KEYS.nutritionLog) || [],
+    profile: load(KEYS.profile) || {},
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `grindlog-backup-${new Date().toISOString().slice(0, 10)}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+export function importData(json) {
+  const data = JSON.parse(json)
+  if (data.exercises !== undefined) save(KEYS.exercises, data.exercises)
+  if (data.sessions !== undefined) save(KEYS.sessions, data.sessions)
+  if (data.exerciseLogs !== undefined) save(KEYS.exerciseLogs, data.exerciseLogs)
+  if (data.meals !== undefined) save(KEYS.meals, data.meals)
+  if (data.nutritionLog !== undefined) save(KEYS.nutritionLog, data.nutritionLog)
+  if (data.profile !== undefined) save(KEYS.profile, data.profile)
+}
+
 export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
 }

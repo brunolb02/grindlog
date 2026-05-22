@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import PageHeader from '../components/PageHeader'
 import Sheet from '../components/Sheet'
 import { FormField, NumberInput, PrimaryButton } from '../components/FormField'
-import { getNutritionLog, getSessions, getProfile, saveProfile, todayKey } from '../utils/storage'
+import { getNutritionLog, getSessions, getProfile, saveProfile, exportData, importData, todayKey } from '../utils/storage'
 import './Dashboard.css'
 
 function formatDate(key) {
@@ -18,6 +18,9 @@ export default function Dashboard() {
     const p = getProfile()
     return { bmr: String(p.bmr), neat: String(p.neat) }
   })
+  const [importError, setImportError] = useState(null)
+  const [importSuccess, setImportSuccess] = useState(false)
+  const importRef = useRef()
 
   const selectedDate = todayKey()
 
@@ -58,6 +61,25 @@ export default function Dashboard() {
   }
 
   const canSaveSettings = profileForm.bmr !== '' && profileForm.neat !== ''
+
+  function handleImport(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setImportError(null)
+    setImportSuccess(false)
+    const reader = new FileReader()
+    reader.onload = ev => {
+      try {
+        importData(ev.target.result)
+        setImportSuccess(true)
+        setTimeout(() => window.location.reload(), 800)
+      } catch {
+        setImportError('Invalid backup file.')
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
 
   return (
     <div className="page">
@@ -163,6 +185,19 @@ export default function Dashboard() {
         <PrimaryButton onClick={saveSettings} disabled={!canSaveSettings}>
           Save
         </PrimaryButton>
+
+        <div className="settings-section-title">Data Backup</div>
+        <button className="settings-action-btn" onClick={exportData}>
+          Export data
+          <span className="settings-action-hint">Downloads a JSON file with all your data</span>
+        </button>
+        <button className="settings-action-btn" onClick={() => importRef.current.click()}>
+          Import data
+          <span className="settings-action-hint">Restore from a previous backup file</span>
+        </button>
+        <input ref={importRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImport} />
+        {importSuccess && <p className="import-success">Restored! Reloading…</p>}
+        {importError && <p className="import-error">{importError}</p>}
       </Sheet>
     </div>
   )
