@@ -1,280 +1,174 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
 import Sheet from '../components/Sheet'
-import { FormField, NumberInput, PrimaryButton } from '../components/FormField'
-import { getExercises, getWorkouts, saveWorkouts, generateId, dateKey } from '../utils/storage'
+import { FormField, TextInput, NumberInput, PrimaryButton, DestructiveButton } from '../components/FormField'
+import { getSessions, saveSessions, generateId, todayKey, dateKey } from '../utils/storage'
 import './Workout.css'
 
-function today() {
-  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
-function emptyNormalSets() {
-  return [
-    { weight: '', reps: '' },
-    { weight: '', reps: '' },
-    { weight: '', reps: '' },
-  ]
+function formatDuration(min) {
+  if (min < 60) return `${min}min`
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return m > 0 ? `${h}h ${m}min` : `${h}h`
 }
 
-function emptyClusterSet() {
-  return { blocks: '', weight: '', failReps: '' }
+function emptyForm() {
+  return { name: '', duration: '', calories: '' }
 }
 
 export default function Workout() {
-  const [workouts, setWorkouts] = useState(getWorkouts)
-  const [exercises] = useState(getExercises)
+  const [sessions, setSessions] = useState(getSessions)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [editSession, setEditSession] = useState(null)
+  const [form, setForm] = useState(emptyForm)
 
-  // Active workout session
-  const [session, setSession] = useState(null)
+  const today = todayKey()
 
-  // Sheet states
-  const [pickExSheet, setPickExSheet] = useState(false)
-  const [logSheet, setLogSheet] = useState(false)
-  const [currentEx, setCurrentEx] = useState(null)
-  const [setType, setSetType] = useState('normal')
-  const [normalSets, setNormalSets] = useState(emptyNormalSets)
-  const [clusterSet, setClusterSet] = useState(emptyClusterSet)
+  const todaySessions = useMemo(
+    () => sessions.filter(s => s.date === today).sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
+    [sessions, today]
+  )
 
-  function startWorkout() {
-    setSession({ id: generateId(), date: new Date().toISOString(), entries: [] })
+  const totalBurned = todaySessions.reduce((sum, s) => sum + s.calories, 0)
+
+  // Group past sessions by date
+  const pastSessions = useMemo(() => {
+    const past = sessions.filter(s => s.date !== today)
+    return past.reduce((acc, s) => {
+      if (!acc[s.date]) acc[s.date] = []
+      acc[s.date].push(s)
+      return acc
+    }, {})
+  }, [sessions, today])
+
+  const sortedPastDates = Object.keys(pastSessions).sort((a, b) => b.localeCompare(a))
+
+  function openAdd() {
+    setEditSession(null)
+    setForm(emptyForm())
+    setSheetOpen(true)
   }
 
-  function finishWorkout() {
-    if (!session) return
-    const updated = [session, ...workouts]
-    setWorkouts(updated)
-    saveWorkouts(updated)
-    setSession(null)
+  function openEdit(session) {
+    setEditSession(session)
+    setForm({ name: session.name, duration: String(session.duration), calories: String(session.calories) })
+    setSheetOpen(true)
   }
 
-  function discardWorkout() {
-    setSession(null)
-  }
-
-  function openPickExercise() {
-    setPickExSheet(true)
-  }
-
-  function selectExercise(ex) {
-    setCurrentEx(ex)
-    setSetType('normal')
-    setNormalSets(emptyNormalSets())
-    setClusterSet(emptyClusterSet())
-    setPickExSheet(false)
-    setLogSheet(true)
-  }
-
-  function logExercise() {
+  function saveSession() {
     const entry = {
-      id: generateId(),
-      exerciseId: currentEx.id,
-      exerciseName: currentEx.name,
-      exercisePhoto: currentEx.photo || null,
-      type: setType,
-      sets: setType === 'normal'
-        ? normalSets.map(s => ({ weight: Number(s.weight), reps: Number(s.reps) }))
-        : {
-            blocks: Number(clusterSet.blocks),
-            weight: Number(clusterSet.weight),
-            failReps: clusterSet.failReps !== '' ? Number(clusterSet.failReps) : null,
-          },
+      name: form.name,
+      duration: Number(form.duration),
+      calories: Number(form.calories),
     }
-    setSession(s => ({ ...s, entries: [...s.entries, entry] }))
-    setLogSheet(false)
+    let updated
+    if (editSession) {
+      updated = sessions.map(s => s.id === editSession.id ? { ...s, ...entry } : s)
+    } else {
+      updated = [...sessions, { id: generateId(), date: today, timestamp: new Date().toISOString(), ...entry }]
+    }
+    setSessions(updated)
+    saveSessions(updated)
+    setSheetOpen(false)
   }
 
-  function canLogNormal() {
-    return normalSets.every(s => s.weight !== '' && s.reps !== '')
+  function deleteSession() {
+    const updated = sessions.filter(s => s.id !== editSession.id)
+    setSessions(updated)
+    saveSessions(updated)
+    setSheetOpen(false)
   }
 
-  function canLogCluster() {
-    return clusterSet.blocks !== '' && clusterSet.weight !== ''
-  }
-
-  function formatCluster(sets) {
-    const base = `${sets.blocks}×4`
-    const fail = sets.failReps != null ? ` + 1×${sets.failReps}` : ''
-    return `${base}${fail} @ ${sets.weight}kg`
-  }
-
-  // Group past workouts by date for display
-  const grouped = workouts.reduce((acc, w) => {
-    const key = dateKey(w.date)
-    if (!acc[key]) acc[key] = []
-    acc[key].push(w)
-    return acc
-  }, {})
-
-  const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+  const canSave = form.name.trim() && form.duration !== '' && form.calories !== ''
 
   return (
     <div className="page">
-      <PageHeader title="Workout" />
+      <PageHeader
+        title="Workout"
+        action={<button className="add-btn" onClick={openAdd}>+ Log</button>}
+      />
       <div className="page-body scroll-area">
-        {/* Active session */}
-        {session ? (
-          <div className="active-session">
-            <div className="session-header">
-              <span className="session-label">Active Workout</span>
-              <span className="session-time">{today()}</span>
-            </div>
-            <div className="session-entries">
-              {session.entries.map(entry => (
-                <div key={entry.id} className="session-entry">
-                  <div className="entry-left">
-                    {entry.exercisePhoto
-                      ? <img src={entry.exercisePhoto} className="entry-thumb" alt="" />
-                      : <div className="entry-thumb entry-thumb-ph">💪</div>
-                    }
-                    <div className="entry-info">
-                      <span className="entry-name">{entry.exerciseName}</span>
-                      {entry.type === 'normal'
-                        ? entry.sets.map((s, i) => (
-                          <span key={i} className="entry-set">Set {i + 1}: {s.weight}kg × {s.reps}</span>
-                        ))
-                        : <span className="entry-set cluster">{formatCluster(entry.sets)}</span>
-                      }
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {session.entries.length === 0 && (
-                <p className="empty-hint" style={{ padding: '12px 0' }}>No exercises logged yet</p>
-              )}
-            </div>
-            <button className="add-exercise-btn" onClick={openPickExercise}>+ Add Exercise</button>
-            <div className="session-actions">
-              <button className="finish-btn" onClick={finishWorkout}>Finish Workout</button>
-              <button className="discard-btn" onClick={discardWorkout}>Discard</button>
-            </div>
+
+        {/* Today */}
+        <div className="section-label">Today</div>
+        {todaySessions.length === 0 ? (
+          <div className="empty-card">
+            <p>No sessions logged today</p>
+            <p className="empty-hint">Tap + Log to add a workout</p>
           </div>
         ) : (
-          <button className="start-workout-btn" onClick={startWorkout}>
-            <span>+ Start Workout</span>
-          </button>
+          <div className="sessions-card">
+            {todaySessions.map((s, i) => (
+              <button key={s.id} className="session-row" onClick={() => openEdit(s)}>
+                <span className="session-time">{formatTime(s.timestamp)}</span>
+                <div className="session-info">
+                  <span className="session-name">{s.name}</span>
+                  <span className="session-meta">{formatDuration(s.duration)}</span>
+                </div>
+                <span className="session-cal">{s.calories} kcal</span>
+              </button>
+            ))}
+            <div className="sessions-total">
+              <span>Total burned</span>
+              <span className="total-val">{totalBurned} kcal</span>
+            </div>
+          </div>
         )}
 
-        {/* Past workouts */}
-        {sortedDates.length > 0 && (
-          <div className="history-section">
-            <h2 className="section-title">History</h2>
-            {sortedDates.map(date => (
-              <div key={date} className="history-day">
-                <div className="history-date">{new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</div>
-                {grouped[date].flatMap(w => w.entries).map(entry => (
-                  <div key={entry.id} className="history-entry">
-                    <div className="entry-left">
-                      {entry.exercisePhoto
-                        ? <img src={entry.exercisePhoto} className="entry-thumb" alt="" />
-                        : <div className="entry-thumb entry-thumb-ph">💪</div>
-                      }
-                      <div className="entry-info">
-                        <span className="entry-name">{entry.exerciseName}</span>
-                        {entry.type === 'normal'
-                          ? entry.sets.map((s, i) => (
-                            <span key={i} className="entry-set">Set {i + 1}: {s.weight}kg × {s.reps}</span>
-                          ))
-                          : <span className="entry-set cluster">{formatCluster(entry.sets)}</span>
-                        }
-                      </div>
-                    </div>
+        {/* History */}
+        {sortedPastDates.length > 0 && (
+          <>
+            <div className="section-label" style={{ marginTop: 24 }}>History</div>
+            {sortedPastDates.map(date => {
+              const daySessions = pastSessions[date].sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+              const dayTotal = daySessions.reduce((sum, s) => sum + s.calories, 0)
+              return (
+                <div key={date} className="history-day-card">
+                  <div className="history-date">
+                    {new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                    <span className="history-day-total">{dayTotal} kcal</span>
                   </div>
-                ))}
-              </div>
-            ))}
-          </div>
+                  {daySessions.map(s => (
+                    <button key={s.id} className="session-row history" onClick={() => openEdit(s)}>
+                      <span className="session-time">{formatTime(s.timestamp)}</span>
+                      <div className="session-info">
+                        <span className="session-name">{s.name}</span>
+                        <span className="session-meta">{formatDuration(s.duration)}</span>
+                      </div>
+                      <span className="session-cal">{s.calories} kcal</span>
+                    </button>
+                  ))}
+                </div>
+              )
+            })}
+          </>
         )}
       </div>
 
-      {/* Pick exercise sheet */}
-      <Sheet open={pickExSheet} onClose={() => setPickExSheet(false)} title="Choose Exercise">
-        {exercises.length === 0 ? (
-          <div className="empty-state">
-            <p>No exercises in library</p>
-            <p className="empty-hint">Add exercises in the Library tab first</p>
-          </div>
-        ) : (
-          <div className="item-list">
-            {exercises.map(ex => (
-              <button key={ex.id} className="list-item" onClick={() => selectExercise(ex)}>
-                <div className="list-item-left">
-                  {ex.photo
-                    ? <img src={ex.photo} className="ex-thumb" alt="" />
-                    : <div className="ex-thumb ex-thumb-placeholder">💪</div>
-                  }
-                  <span className="list-item-name">{ex.name}</span>
-                </div>
-                <span className="chevron">›</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </Sheet>
-
-      {/* Log exercise sheet */}
-      <Sheet open={logSheet} onClose={() => setLogSheet(false)} title={currentEx?.name}>
-        <div className="set-type-toggle">
-          <button
-            className={setType === 'normal' ? 'active' : ''}
-            onClick={() => setSetType('normal')}
-          >Normal Set</button>
-          <button
-            className={setType === 'cluster' ? 'active' : ''}
-            onClick={() => setSetType('cluster')}
-          >Cluster Set</button>
+      <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={editSession ? 'Edit Session' : 'Log Session'}>
+        <FormField label="Activity">
+          <TextInput
+            value={form.name}
+            onChange={v => setForm(f => ({ ...f, name: v }))}
+            placeholder="e.g. Gym, Cardio, Swimming…"
+          />
+        </FormField>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <FormField label="Duration (min)">
+            <NumberInput value={form.duration} onChange={v => setForm(f => ({ ...f, duration: v }))} placeholder="e.g. 80" min="1" />
+          </FormField>
+          <FormField label="Calories burned">
+            <NumberInput value={form.calories} onChange={v => setForm(f => ({ ...f, calories: v }))} placeholder="e.g. 700" min="0" />
+          </FormField>
         </div>
-
-        {setType === 'normal' && (
-          <div className="normal-sets">
-            {normalSets.map((s, i) => (
-              <div key={i} className="set-row">
-                <span className="set-number">Set {i + 1}</span>
-                <div className="set-inputs">
-                  <NumberInput
-                    value={s.weight}
-                    onChange={v => setNormalSets(sets => sets.map((s2, j) => j === i ? { ...s2, weight: v } : s2))}
-                    placeholder="kg"
-                    step="0.5"
-                  />
-                  <NumberInput
-                    value={s.reps}
-                    onChange={v => setNormalSets(sets => sets.map((s2, j) => j === i ? { ...s2, reps: v } : s2))}
-                    placeholder="reps"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {setType === 'cluster' && (
-          <div className="cluster-form">
-            <div className="cluster-preview">
-              {clusterSet.blocks
-                ? <span className="cluster-display">{formatCluster({ blocks: clusterSet.blocks, weight: clusterSet.weight || '?', failReps: clusterSet.failReps !== '' ? clusterSet.failReps : null })}</span>
-                : <span className="cluster-display-empty">Fill fields to preview</span>
-              }
-            </div>
-            <FormField label="Full Blocks (×4 reps each)">
-              <NumberInput value={clusterSet.blocks} onChange={v => setClusterSet(s => ({ ...s, blocks: v }))} placeholder="e.g. 4" min="1" />
-            </FormField>
-            <FormField label="Weight (kg)">
-              <NumberInput value={clusterSet.weight} onChange={v => setClusterSet(s => ({ ...s, weight: v }))} placeholder="e.g. 80" step="0.5" />
-            </FormField>
-            <FormField label="Final block reps (to failure — optional)">
-              <NumberInput value={clusterSet.failReps} onChange={v => setClusterSet(s => ({ ...s, failReps: v }))} placeholder="e.g. 3" min="1" />
-            </FormField>
-          </div>
-        )}
-
-        <PrimaryButton
-          onClick={logExercise}
-          disabled={setType === 'normal' ? !canLogNormal() : !canLogCluster()}
-          style={{ marginTop: 12 }}
-        >
-          Log Exercise
+        <PrimaryButton onClick={saveSession} disabled={!canSave}>
+          {editSession ? 'Save Changes' : 'Log Session'}
         </PrimaryButton>
+        {editSession && <DestructiveButton onClick={deleteSession}>Delete Session</DestructiveButton>}
       </Sheet>
     </div>
   )

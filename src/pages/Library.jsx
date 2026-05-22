@@ -1,39 +1,92 @@
-import { useState, useRef } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import PageHeader from '../components/PageHeader'
 import Sheet from '../components/Sheet'
 import { FormField, TextInput, NumberInput, PrimaryButton, DestructiveButton } from '../components/FormField'
-import { getExercises, saveExercises, getMeals, saveMeals, generateId } from '../utils/storage'
+import {
+  getExercises, saveExercises,
+  getMeals, saveMeals,
+  getExerciseLogs, saveExerciseLogs,
+  generateId, todayKey,
+} from '../utils/storage'
 import './Library.css'
 
+export const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Other']
+
 function emptyExercise() {
-  return { name: '', photo: null }
+  return { name: '', muscleGroup: 'Chest', photo: null }
 }
 
 function emptyMeal() {
   return { name: '', calories: '', carbs: '', protein: '', fat: '' }
 }
 
+function emptyNormalSets() {
+  return [{ weight: '', reps: '' }, { weight: '', reps: '' }, { weight: '', reps: '' }]
+}
+
+function emptyClusterSet() {
+  return { blocks: '', weight: '', failReps: '' }
+}
+
+function formatCluster(sets) {
+  const base = `${sets.blocks}×4`
+  const fail = sets.failReps != null && sets.failReps !== '' ? ` + 1×${sets.failReps}` : ''
+  return `${base}${fail} @ ${sets.weight}kg`
+}
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 export default function Library() {
   const [tab, setTab] = useState('exercises')
   const [exercises, setExercises] = useState(getExercises)
   const [meals, setMeals] = useState(getMeals)
+  const [exerciseLogs, setExerciseLogs] = useState(getExerciseLogs)
+
+  // Exercise CRUD sheet
   const [exSheet, setExSheet] = useState(false)
-  const [mealSheet, setMealSheet] = useState(false)
   const [editEx, setEditEx] = useState(null)
-  const [editMeal, setEditMeal] = useState(null)
   const [exForm, setExForm] = useState(emptyExercise)
-  const [mealForm, setMealForm] = useState(emptyMeal)
   const photoRef = useRef()
 
-  function openNewExercise() {
+  // Exercise log sheet (sets/reps for a specific exercise)
+  const [logSheet, setLogSheet] = useState(false)
+  const [activeEx, setActiveEx] = useState(null)
+  const [setType, setSetType] = useState('normal')
+  const [normalSets, setNormalSets] = useState(emptyNormalSets)
+  const [clusterSet, setClusterSet] = useState(emptyClusterSet)
+
+  // Meal CRUD sheet
+  const [mealSheet, setMealSheet] = useState(false)
+  const [editMeal, setEditMeal] = useState(null)
+  const [mealForm, setMealForm] = useState(emptyMeal)
+
+  // Collapsed muscle groups
+  const [collapsed, setCollapsed] = useState({})
+
+  // ─── Exercises grouped by muscle group ───────────────────────────────────
+  const grouped = useMemo(() => {
+    return MUSCLE_GROUPS.reduce((acc, g) => {
+      acc[g] = exercises.filter(e => (e.muscleGroup || 'Other') === g)
+      return acc
+    }, {})
+  }, [exercises])
+
+  function toggleGroup(g) {
+    setCollapsed(c => ({ ...c, [g]: !c[g] }))
+  }
+
+  // ─── Exercise CRUD ────────────────────────────────────────────────────────
+  function openNewExercise(muscleGroup) {
     setEditEx(null)
-    setExForm(emptyExercise())
+    setExForm({ ...emptyExercise(), muscleGroup })
     setExSheet(true)
   }
 
   function openEditExercise(ex) {
     setEditEx(ex)
-    setExForm({ name: ex.name, photo: ex.photo || null })
+    setExForm({ name: ex.name, muscleGroup: ex.muscleGroup || 'Other', photo: ex.photo || null })
     setExSheet(true)
   }
 
@@ -61,6 +114,49 @@ export default function Library() {
     reader.readAsDataURL(file)
   }
 
+  // ─── Exercise log ─────────────────────────────────────────────────────────
+  function openLog(ex) {
+    setActiveEx(ex)
+    setSetType('normal')
+    setNormalSets(emptyNormalSets())
+    setClusterSet(emptyClusterSet())
+    setLogSheet(true)
+  }
+
+  function logSets() {
+    const entry = {
+      id: generateId(),
+      exerciseId: activeEx.id,
+      exerciseName: activeEx.name,
+      date: todayKey(),
+      timestamp: new Date().toISOString(),
+      type: setType,
+      sets: setType === 'normal'
+        ? normalSets.map(s => ({ weight: Number(s.weight), reps: Number(s.reps) }))
+        : { blocks: Number(clusterSet.blocks), weight: Number(clusterSet.weight), failReps: clusterSet.failReps !== '' ? Number(clusterSet.failReps) : null },
+    }
+    const updated = [...exerciseLogs, entry]
+    setExerciseLogs(updated)
+    saveExerciseLogs(updated)
+    setLogSheet(false)
+  }
+
+  function canLogNormal() {
+    return normalSets.every(s => s.weight !== '' && s.reps !== '')
+  }
+
+  function canLogCluster() {
+    return clusterSet.blocks !== '' && clusterSet.weight !== ''
+  }
+
+  function logsForExercise(exId) {
+    return exerciseLogs
+      .filter(l => l.exerciseId === exId)
+      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+      .slice(0, 5)
+  }
+
+  // ─── Meal CRUD ────────────────────────────────────────────────────────────
   function openNewMeal() {
     setEditMeal(null)
     setMealForm(emptyMeal())
@@ -74,13 +170,7 @@ export default function Library() {
   }
 
   function saveMeal() {
-    const entry = {
-      name: mealForm.name,
-      calories: Number(mealForm.calories),
-      carbs: Number(mealForm.carbs),
-      protein: Number(mealForm.protein),
-      fat: Number(mealForm.fat),
-    }
+    const entry = { name: mealForm.name, calories: Number(mealForm.calories), carbs: Number(mealForm.carbs), protein: Number(mealForm.protein), fat: Number(mealForm.fat) }
     const updated = editMeal
       ? meals.map(m => m.id === editMeal.id ? { ...m, ...entry } : m)
       : [...meals, { id: generateId(), ...entry }]
@@ -101,12 +191,9 @@ export default function Library() {
       <PageHeader
         title="Library"
         action={
-          <button
-            className="add-btn"
-            onClick={tab === 'exercises' ? openNewExercise : openNewMeal}
-          >
-            + Add
-          </button>
+          tab === 'meals'
+            ? <button className="add-btn" onClick={openNewMeal}>+ Add</button>
+            : null
         }
       />
 
@@ -116,31 +203,48 @@ export default function Library() {
       </div>
 
       <div className="page-body scroll-area">
+
+        {/* ── EXERCISES ── */}
         {tab === 'exercises' && (
-          <>
-            {exercises.length === 0 && (
-              <div className="empty-state">
-                <p>No exercises yet</p>
-                <p className="empty-hint">Tap + Add to create your first exercise</p>
-              </div>
-            )}
-            <div className="item-list">
-              {exercises.map(ex => (
-                <button key={ex.id} className="list-item" onClick={() => openEditExercise(ex)}>
-                  <div className="list-item-left">
-                    {ex.photo
-                      ? <img src={ex.photo} className="ex-thumb" alt="" />
-                      : <div className="ex-thumb ex-thumb-placeholder"><span>💪</span></div>
-                    }
-                    <span className="list-item-name">{ex.name}</span>
-                  </div>
-                  <span className="chevron">›</span>
-                </button>
-              ))}
-            </div>
-          </>
+          <div className="muscle-groups">
+            {MUSCLE_GROUPS.map(group => {
+              const exList = grouped[group]
+              const isCollapsed = collapsed[group]
+              return (
+                <div key={group} className="muscle-group">
+                  <button className="group-header" onClick={() => toggleGroup(group)}>
+                    <span className="group-title">{group}</span>
+                    <div className="group-header-right">
+                      <span className="group-count">{exList.length}</span>
+                      <span className={`group-chevron ${isCollapsed ? '' : 'open'}`}>›</span>
+                    </div>
+                  </button>
+                  {!isCollapsed && (
+                    <div className="group-body">
+                      {exList.map(ex => (
+                        <div key={ex.id} className="ex-row">
+                          <button className="ex-main" onClick={() => openLog(ex)}>
+                            {ex.photo
+                              ? <img src={ex.photo} className="ex-thumb" alt="" />
+                              : <div className="ex-thumb ex-thumb-ph">💪</div>
+                            }
+                            <span className="ex-name">{ex.name}</span>
+                          </button>
+                          <button className="ex-edit-btn" onClick={() => openEditExercise(ex)}>···</button>
+                        </div>
+                      ))}
+                      <button className="add-ex-row" onClick={() => openNewExercise(group)}>
+                        + Add {group} exercise
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         )}
 
+        {/* ── MEALS ── */}
         {tab === 'meals' && (
           <>
             {meals.length === 0 && (
@@ -152,7 +256,7 @@ export default function Library() {
             <div className="item-list">
               {meals.map(meal => (
                 <button key={meal.id} className="list-item meal-item" onClick={() => openEditMeal(meal)}>
-                  <div className="list-item-left meal-info">
+                  <div className="meal-info">
                     <span className="list-item-name">{meal.name}</span>
                     <span className="meal-macros">{meal.calories} kcal · P {meal.protein}g · C {meal.carbs}g · F {meal.fat}g</span>
                   </div>
@@ -164,7 +268,7 @@ export default function Library() {
         )}
       </div>
 
-      {/* Exercise sheet */}
+      {/* ── Exercise CRUD sheet ── */}
       <Sheet open={exSheet} onClose={() => setExSheet(false)} title={editEx ? 'Edit Exercise' : 'New Exercise'}>
         <div className="photo-picker" onClick={() => photoRef.current.click()}>
           {exForm.photo
@@ -174,11 +278,18 @@ export default function Library() {
           <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
         </div>
         <FormField label="Exercise Name">
-          <TextInput
-            value={exForm.name}
-            onChange={v => setExForm(f => ({ ...f, name: v }))}
-            placeholder="e.g. Bench Press"
-          />
+          <TextInput value={exForm.name} onChange={v => setExForm(f => ({ ...f, name: v }))} placeholder="e.g. Bench Press" />
+        </FormField>
+        <FormField label="Muscle Group">
+          <div className="muscle-picker">
+            {MUSCLE_GROUPS.map(g => (
+              <button
+                key={g}
+                className={`muscle-chip ${exForm.muscleGroup === g ? 'active' : ''}`}
+                onClick={() => setExForm(f => ({ ...f, muscleGroup: g }))}
+              >{g}</button>
+            ))}
+          </div>
         </FormField>
         <PrimaryButton onClick={saveExercise} disabled={!exForm.name.trim()}>
           {editEx ? 'Save Changes' : 'Add Exercise'}
@@ -186,14 +297,88 @@ export default function Library() {
         {editEx && <DestructiveButton onClick={deleteExercise}>Delete Exercise</DestructiveButton>}
       </Sheet>
 
-      {/* Meal sheet */}
+      {/* ── Exercise log sheet ── */}
+      <Sheet open={logSheet} onClose={() => setLogSheet(false)} title={activeEx?.name}>
+        {/* Recent logs for this exercise */}
+        {activeEx && logsForExercise(activeEx.id).length > 0 && (
+          <div className="recent-logs">
+            <div className="recent-logs-title">Recent</div>
+            {logsForExercise(activeEx.id).map(log => (
+              <div key={log.id} className="log-entry">
+                <span className="log-date">{formatDate(log.timestamp)}</span>
+                <div className="log-sets">
+                  {log.type === 'normal'
+                    ? log.sets.map((s, i) => <span key={i} className="log-set">Set {i+1}: {s.weight}kg × {s.reps}</span>)
+                    : <span className="log-set cluster">{formatCluster(log.sets)}</span>
+                  }
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Set type toggle */}
+        <div className="set-type-toggle">
+          <button className={setType === 'normal' ? 'active' : ''} onClick={() => setSetType('normal')}>Normal Set</button>
+          <button className={setType === 'cluster' ? 'active' : ''} onClick={() => setSetType('cluster')}>Cluster Set</button>
+        </div>
+
+        {setType === 'normal' && (
+          <div className="normal-sets">
+            {normalSets.map((s, i) => (
+              <div key={i} className="set-row">
+                <span className="set-number">Set {i + 1}</span>
+                <div className="set-inputs">
+                  <NumberInput
+                    value={s.weight}
+                    onChange={v => setNormalSets(sets => sets.map((s2, j) => j === i ? { ...s2, weight: v } : s2))}
+                    placeholder="kg"
+                    step="0.5"
+                  />
+                  <NumberInput
+                    value={s.reps}
+                    onChange={v => setNormalSets(sets => sets.map((s2, j) => j === i ? { ...s2, reps: v } : s2))}
+                    placeholder="reps"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {setType === 'cluster' && (
+          <div className="cluster-form">
+            <div className="cluster-preview">
+              {clusterSet.blocks && clusterSet.weight
+                ? <span className="cluster-display">{formatCluster(clusterSet)}</span>
+                : <span className="cluster-display-empty">Fill fields to preview</span>
+              }
+            </div>
+            <FormField label="Full Blocks (×4 reps each)">
+              <NumberInput value={clusterSet.blocks} onChange={v => setClusterSet(s => ({ ...s, blocks: v }))} placeholder="e.g. 4" min="1" />
+            </FormField>
+            <FormField label="Weight (kg)">
+              <NumberInput value={clusterSet.weight} onChange={v => setClusterSet(s => ({ ...s, weight: v }))} placeholder="e.g. 80" step="0.5" />
+            </FormField>
+            <FormField label="Final block reps (optional)">
+              <NumberInput value={clusterSet.failReps} onChange={v => setClusterSet(s => ({ ...s, failReps: v }))} placeholder="e.g. 3" min="1" />
+            </FormField>
+          </div>
+        )}
+
+        <PrimaryButton
+          onClick={logSets}
+          disabled={setType === 'normal' ? !canLogNormal() : !canLogCluster()}
+          style={{ marginTop: 12 }}
+        >
+          Log Sets
+        </PrimaryButton>
+      </Sheet>
+
+      {/* ── Meal CRUD sheet ── */}
       <Sheet open={mealSheet} onClose={() => setMealSheet(false)} title={editMeal ? 'Edit Meal' : 'New Meal'}>
         <FormField label="Meal Name">
-          <TextInput
-            value={mealForm.name}
-            onChange={v => setMealForm(f => ({ ...f, name: v }))}
-            placeholder="e.g. Chicken & Rice"
-          />
+          <TextInput value={mealForm.name} onChange={v => setMealForm(f => ({ ...f, name: v }))} placeholder="e.g. Chicken & Rice" />
         </FormField>
         <FormField label="Calories (kcal)">
           <NumberInput value={mealForm.calories} onChange={v => setMealForm(f => ({ ...f, calories: v }))} placeholder="0" min="0" />

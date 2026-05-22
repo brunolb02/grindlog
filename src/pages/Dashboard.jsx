@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
-import Sheet from '../components/Sheet'
-import { FormField, NumberInput, PrimaryButton } from '../components/FormField'
-import { getNutritionLog, getDailyMetrics, saveDailyMetrics, todayKey } from '../utils/storage'
+import { getNutritionLog, getSessions, todayKey } from '../utils/storage'
 import './Dashboard.css'
 
 function formatDate(key) {
@@ -11,9 +9,7 @@ function formatDate(key) {
 
 export default function Dashboard() {
   const [log] = useState(getNutritionLog)
-  const [metricsMap, setMetricsMap] = useState(getDailyMetrics)
-  const [burnSheet, setBurnSheet] = useState(false)
-  const [burnInput, setBurnInput] = useState('')
+  const [sessions] = useState(getSessions)
 
   const selectedDate = todayKey()
 
@@ -32,22 +28,17 @@ export default function Dashboard() {
     { calories: 0, carbs: 0, protein: 0, fat: 0 }
   )
 
-  const burned = metricsMap[selectedDate]?.burned || 0
-  const net = totals.calories - burned
+  const burned = useMemo(
+    () => sessions.filter(s => s.date === selectedDate).reduce((sum, s) => sum + s.calories, 0),
+    [sessions, selectedDate]
+  )
 
+  const net = totals.calories - burned
   const totalMacroG = totals.carbs + totals.protein + totals.fat
 
   function macroPercent(g) {
     if (totalMacroG === 0) return 0
     return Math.round((g / totalMacroG) * 100)
-  }
-
-  function saveBurned() {
-    const updated = { ...metricsMap, [selectedDate]: { burned: Number(burnInput) } }
-    setMetricsMap(updated)
-    saveDailyMetrics(updated)
-    setBurnSheet(false)
-    setBurnInput('')
   }
 
   return (
@@ -72,11 +63,13 @@ export default function Dashboard() {
               <div className="cal-meta-divider" />
               <div className="cal-meta-row">
                 <span className="cal-meta-label">Net</span>
-                <span className={`cal-meta-val net ${net > 0 ? 'positive' : net < 0 ? 'negative' : ''}`}>{net > 0 ? '+' : ''}{net}</span>
+                <span className={`cal-meta-val net ${net > 0 ? 'positive' : net < 0 ? 'negative' : ''}`}>
+                  {net > 0 ? '+' : ''}{net}
+                </span>
               </div>
-              <button className="edit-burned-btn" onClick={() => { setBurnInput(String(burned || '')); setBurnSheet(true) }}>
-                {burned ? 'Edit burned' : 'Log burned'}
-              </button>
+              {burned === 0 && (
+                <span className="burned-hint">Log workouts to see calories burned</span>
+              )}
             </div>
           </div>
         </div>
@@ -91,7 +84,20 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Meals list */}
+        {/* Today's workouts */}
+        {sessions.filter(s => s.date === selectedDate).length > 0 && (
+          <div className="dash-card">
+            <div className="dash-card-title">Today's Workouts</div>
+            {sessions.filter(s => s.date === selectedDate).map(s => (
+              <div key={s.id} className="dash-meal-row">
+                <span className="dash-meal-name">{s.name}</span>
+                <span className="dash-meal-cal" style={{ color: 'var(--accent-red)' }}>{s.calories} kcal</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Today's meals */}
         {todayEntries.length > 0 && (
           <div className="dash-card">
             <div className="dash-card-title">Today's Meals</div>
@@ -104,19 +110,6 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-
-      <Sheet open={burnSheet} onClose={() => setBurnSheet(false)} title="Calories Burned">
-        <p className="burn-hint">Enter the calories burned from your smartwatch or fitness tracker.</p>
-        <FormField label="Calories Burned">
-          <NumberInput
-            value={burnInput}
-            onChange={setBurnInput}
-            placeholder="e.g. 420"
-            min="0"
-          />
-        </FormField>
-        <PrimaryButton onClick={saveBurned} disabled={burnInput === ''}>Save</PrimaryButton>
-      </Sheet>
     </div>
   )
 }

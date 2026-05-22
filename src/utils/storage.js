@@ -1,9 +1,9 @@
 const KEYS = {
   exercises: 'gl_exercises',
-  workouts: 'gl_workouts',
+  sessions: 'gl_sessions',       // workout activity sessions
+  exerciseLogs: 'gl_exercise_logs', // sets/reps logs per exercise
   meals: 'gl_meals',
   nutritionLog: 'gl_nutrition_log',
-  dailyMetrics: 'gl_daily_metrics',
 }
 
 function load(key) {
@@ -27,12 +27,20 @@ export function saveExercises(list) {
   save(KEYS.exercises, list)
 }
 
-// Workouts
-export function getWorkouts() {
-  return load(KEYS.workouts) || []
+// Workout sessions (activity-level: Gym, Cardio, etc.)
+export function getSessions() {
+  return load(KEYS.sessions) || []
 }
-export function saveWorkouts(list) {
-  save(KEYS.workouts, list)
+export function saveSessions(list) {
+  save(KEYS.sessions, list)
+}
+
+// Exercise logs (sets/reps per exercise)
+export function getExerciseLogs() {
+  return load(KEYS.exerciseLogs) || []
+}
+export function saveExerciseLogs(list) {
+  save(KEYS.exerciseLogs, list)
 }
 
 // Meals
@@ -49,14 +57,6 @@ export function getNutritionLog() {
 }
 export function saveNutritionLog(list) {
   save(KEYS.nutritionLog, list)
-}
-
-// Daily metrics (calories burned per day)
-export function getDailyMetrics() {
-  return load(KEYS.dailyMetrics) || {}
-}
-export function saveDailyMetrics(map) {
-  save(KEYS.dailyMetrics, map)
 }
 
 export function generateId() {
