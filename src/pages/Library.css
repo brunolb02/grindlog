@@ -446,6 +446,39 @@
   flex: 1;
 }
 
+/* ── AI fill ── */
+.ai-fill-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: -4px;
+  margin-bottom: 4px;
+}
+
+.ai-fill-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(10, 132, 255, 0.12);
+  transition: opacity 0.15s;
+}
+
+.ai-fill-btn:disabled {
+  opacity: 0.4;
+}
+
+.ai-fill-btn:active:not(:disabled) {
+  opacity: 0.7;
+}
+
+.ai-fill-error {
+  font-size: 12px;
+  color: var(--accent-red);
+  flex: 1;
+}
+
 /* ── Empty state ── */
 .empty-state {
   text-align: center;

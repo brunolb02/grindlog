@@ -5,6 +5,7 @@ const KEYS = {
   meals: 'gl_meals',
   nutritionLog: 'gl_nutrition_log',
   profile: 'gl_profile',
+  geminiKey: 'gl_gemini_key',
 }
 
 function load(key) {
@@ -98,6 +99,15 @@ export function importData(json) {
   if (data.meals !== undefined) save(KEYS.meals, data.meals)
   if (data.nutritionLog !== undefined) save(KEYS.nutritionLog, data.nutritionLog)
   if (data.profile !== undefined) save(KEYS.profile, data.profile)
+}
+
+// Gemini API key
+export function getGeminiKey() {
+  return localStorage.getItem(KEYS.geminiKey) || ''
+}
+export function saveGeminiKey(key) {
+  if (key) localStorage.setItem(KEYS.geminiKey, key)
+  else localStorage.removeItem(KEYS.geminiKey)
 }
 
 export function generateId() {

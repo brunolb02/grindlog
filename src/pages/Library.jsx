@@ -6,8 +6,10 @@ import {
   getExercises, saveExercises,
   getMeals, saveMeals,
   getExerciseLogs, saveExerciseLogs,
+  getGeminiKey,
   generateId, todayKey,
 } from '../utils/storage'
+import { fetchMacros } from '../utils/gemini'
 import './Library.css'
 
 export const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Other']
@@ -61,6 +63,9 @@ export default function Library() {
   const [mealSheet, setMealSheet] = useState(false)
   const [editMeal, setEditMeal] = useState(null)
   const [mealForm, setMealForm] = useState(emptyMeal)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState(null)
+  const geminiKey = getGeminiKey()
 
   // Collapsed muscle groups
   const [collapsed, setCollapsed] = useState({})
@@ -157,15 +162,36 @@ export default function Library() {
   }
 
   // ─── Meal CRUD ────────────────────────────────────────────────────────────
+  async function fillWithAi() {
+    setAiLoading(true)
+    setAiError(null)
+    try {
+      const macros = await fetchMacros(mealForm.name, geminiKey)
+      setMealForm(f => ({
+        ...f,
+        calories: String(macros.calories),
+        carbs: String(macros.carbs),
+        protein: String(macros.protein),
+        fat: String(macros.fat),
+      }))
+    } catch (e) {
+      setAiError(e.message || 'Failed to fetch macros')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   function openNewMeal() {
     setEditMeal(null)
     setMealForm(emptyMeal())
+    setAiError(null)
     setMealSheet(true)
   }
 
   function openEditMeal(meal) {
     setEditMeal(meal)
     setMealForm({ name: meal.name, calories: String(meal.calories), carbs: String(meal.carbs), protein: String(meal.protein), fat: String(meal.fat) })
+    setAiError(null)
     setMealSheet(true)
   }
 
@@ -390,6 +416,18 @@ export default function Library() {
         <FormField label="Meal Name">
           <TextInput value={mealForm.name} onChange={v => setMealForm(f => ({ ...f, name: v }))} placeholder="e.g. Chicken & Rice" />
         </FormField>
+        {geminiKey && (
+          <div className="ai-fill-row">
+            <button
+              className="ai-fill-btn"
+              onClick={fillWithAi}
+              disabled={!mealForm.name.trim() || aiLoading}
+            >
+              {aiLoading ? 'Filling…' : '✦ Fill macros with AI'}
+            </button>
+            {aiError && <span className="ai-fill-error">{aiError}</span>}
+          </div>
+        )}
         <FormField label="Calories (kcal)">
           <NumberInput value={mealForm.calories} onChange={v => setMealForm(f => ({ ...f, calories: v }))} placeholder="0" min="0" />
         </FormField>
