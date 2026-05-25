@@ -17,7 +17,7 @@ function formatDuration(min) {
 }
 
 function emptyForm() {
-  return { name: '', duration: '', calories: '' }
+  return { activityType: 'Gym', customName: '', duration: '', calories: '' }
 }
 
 export default function Workout() {
@@ -55,13 +55,19 @@ export default function Workout() {
 
   function openEdit(session) {
     setEditSession(session)
-    setForm({ name: session.name, duration: String(session.duration), calories: String(session.calories) })
+    const isPreset = session.name === 'Gym' || session.name === 'Cardio'
+    setForm({
+      activityType: isPreset ? session.name : 'Other',
+      customName: isPreset ? '' : session.name,
+      duration: String(session.duration),
+      calories: String(session.calories),
+    })
     setSheetOpen(true)
   }
 
   function saveSession() {
     const entry = {
-      name: form.name,
+      name: form.activityType === 'Other' ? form.customName.trim() : form.activityType,
       duration: Number(form.duration),
       calories: Number(form.calories),
     }
@@ -83,7 +89,8 @@ export default function Workout() {
     setSheetOpen(false)
   }
 
-  const canSave = form.name.trim() && form.duration !== '' && form.calories !== ''
+  const nameValid = form.activityType !== 'Other' || form.customName.trim() !== ''
+  const canSave = nameValid && form.duration !== '' && form.calories !== ''
 
   return (
     <div className="page">
@@ -151,12 +158,29 @@ export default function Workout() {
 
       <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={editSession ? 'Edit Session' : 'Log Session'}>
         <FormField label="Activity">
-          <TextInput
-            value={form.name}
-            onChange={v => setForm(f => ({ ...f, name: v }))}
-            placeholder="e.g. Gym, Cardio, Swimming…"
-          />
+          <div className="activity-picker">
+            {['Gym', 'Cardio', 'Other'].map(type => (
+              <button
+                key={type}
+                type="button"
+                className={`activity-pill${form.activityType === type ? ' active' : ''}`}
+                onClick={() => setForm(f => ({ ...f, activityType: type }))}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
         </FormField>
+        {form.activityType === 'Other' && (
+          <FormField>
+            <TextInput
+              value={form.customName}
+              onChange={v => setForm(f => ({ ...f, customName: v }))}
+              placeholder="Describe your activity…"
+              autoFocus
+            />
+          </FormField>
+        )}
         <div style={{ display: 'flex', gap: 10 }}>
           <FormField label="Duration (min)">
             <NumberInput value={form.duration} onChange={v => setForm(f => ({ ...f, duration: v }))} placeholder="e.g. 80" min="1" />

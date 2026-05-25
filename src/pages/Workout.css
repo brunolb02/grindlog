@@ -143,3 +143,29 @@
 .session-row.history:last-child {
   border-bottom: none;
 }
+
+/* Activity type picker */
+.activity-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.activity-pill {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 10px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+
+.activity-pill.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.activity-pill:active {
+  opacity: 0.7;
+}
