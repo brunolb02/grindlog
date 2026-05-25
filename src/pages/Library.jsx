@@ -416,7 +416,7 @@ export default function Library() {
         <FormField label="Meal Name">
           <TextInput value={mealForm.name} onChange={v => setMealForm(f => ({ ...f, name: v }))} placeholder="e.g. Chicken & Rice" />
         </FormField>
-        {geminiKey && (
+        {geminiKey ? (
           <div className="ai-fill-row">
             <button
               className="ai-fill-btn"
@@ -427,6 +427,10 @@ export default function Library() {
             </button>
             {aiError && <span className="ai-fill-error">{aiError}</span>}
           </div>
+        ) : (
+          <p className="ai-setup-hint">
+            ✦ Set up a free Gemini API key in <strong>Dashboard → ⚙</strong> to auto-fill macros with AI
+          </p>
         )}
         <FormField label="Calories (kcal)">
           <NumberInput value={mealForm.calories} onChange={v => setMealForm(f => ({ ...f, calories: v }))} placeholder="0" min="0" />
