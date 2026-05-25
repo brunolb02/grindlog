@@ -5,7 +5,7 @@ const KEYS = {
   meals: 'gl_meals',
   nutritionLog: 'gl_nutrition_log',
   profile: 'gl_profile',
-  geminiKey: 'gl_gemini_key',
+  aiSettings: 'gl_ai_settings',
 }
 
 function load(key) {
@@ -101,13 +101,29 @@ export function importData(json) {
   if (data.profile !== undefined) save(KEYS.profile, data.profile)
 }
 
-// Gemini API key
-export function getGeminiKey() {
-  return localStorage.getItem(KEYS.geminiKey) || ''
+// AI provider settings
+const DEFAULT_AI_SETTINGS = {
+  active: 'groq',
+  groq: { key: '', model: 'llama-3.3-70b-versatile' },
+  openrouter: { key: '', model: 'meta-llama/llama-3.1-8b-instruct:free' },
+  gemini: { key: '', model: 'gemini-1.5-flash' },
 }
-export function saveGeminiKey(key) {
-  if (key) localStorage.setItem(KEYS.geminiKey, key)
-  else localStorage.removeItem(KEYS.geminiKey)
+
+export function getAiSettings() {
+  const stored = load(KEYS.aiSettings)
+  // migrate old single gemini key if present
+  const legacyKey = localStorage.getItem('gl_gemini_key')
+  if (!stored && legacyKey) {
+    const migrated = { ...DEFAULT_AI_SETTINGS, active: 'gemini', gemini: { key: legacyKey, model: 'gemini-1.5-flash' } }
+    save(KEYS.aiSettings, migrated)
+    localStorage.removeItem('gl_gemini_key')
+    return migrated
+  }
+  return { ...DEFAULT_AI_SETTINGS, ...stored }
+}
+
+export function saveAiSettings(settings) {
+  save(KEYS.aiSettings, settings)
 }
 
 export function generateId() {

@@ -6,10 +6,10 @@ import {
   getExercises, saveExercises,
   getMeals, saveMeals,
   getExerciseLogs, saveExerciseLogs,
-  getGeminiKey,
+  getAiSettings,
   generateId, todayKey,
 } from '../utils/storage'
-import { fetchMacros } from '../utils/gemini'
+import { fetchMacros } from '../utils/ai'
 import './Library.css'
 
 export const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Other']
@@ -65,7 +65,10 @@ export default function Library() {
   const [mealForm, setMealForm] = useState(emptyMeal)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState(null)
-  const geminiKey = getGeminiKey()
+  const aiSettings = getAiSettings()
+  const activeProvider = aiSettings.active
+  const activeProviderSettings = aiSettings[activeProvider]
+  const hasAiKey = !!activeProviderSettings?.key
 
   // Collapsed muscle groups
   const [collapsed, setCollapsed] = useState({})
@@ -166,7 +169,7 @@ export default function Library() {
     setAiLoading(true)
     setAiError(null)
     try {
-      const macros = await fetchMacros(mealForm.name, geminiKey)
+      const macros = await fetchMacros(mealForm.name, activeProvider, activeProviderSettings.key, activeProviderSettings.model)
       setMealForm(f => ({
         ...f,
         calories: String(macros.calories),
@@ -416,7 +419,7 @@ export default function Library() {
         <FormField label="Meal Name">
           <TextInput value={mealForm.name} onChange={v => setMealForm(f => ({ ...f, name: v }))} placeholder="e.g. Chicken & Rice" />
         </FormField>
-        {geminiKey ? (
+        {hasAiKey ? (
           <div className="ai-fill-row">
             <button
               className="ai-fill-btn"

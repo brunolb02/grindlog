@@ -175,6 +175,32 @@
   margin-bottom: 4px;
 }
 
+.ai-provider-picker {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.ai-provider-pill {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: 10px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ai-provider-pill.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.ai-provider-pill:active {
+  opacity: 0.7;
+}
+
 .import-success {
   font-size: 14px;
   color: var(--accent-green);

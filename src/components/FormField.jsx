@@ -38,6 +38,20 @@ export function NumberInput({ value, onChange, placeholder, min, step, ...props 
   )
 }
 
+export function SelectInput({ value, onChange, options }) {
+  return (
+    <select
+      className="select-input"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+    >
+      {options.map(o => (
+        <option key={o.id} value={o.id}>{o.label}</option>
+      ))}
+    </select>
+  )
+}
+
 export function PrimaryButton({ children, onClick, disabled, style }) {
   return (
     <button

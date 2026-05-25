@@ -1,8 +1,9 @@
 import { useState, useMemo, useRef } from 'react'
 import PageHeader from '../components/PageHeader'
 import Sheet from '../components/Sheet'
-import { FormField, TextInput, NumberInput, PrimaryButton } from '../components/FormField'
-import { getNutritionLog, getSessions, getProfile, saveProfile, getGeminiKey, saveGeminiKey, exportData, importData, todayKey } from '../utils/storage'
+import { FormField, TextInput, NumberInput, SelectInput, PrimaryButton } from '../components/FormField'
+import { getNutritionLog, getSessions, getProfile, saveProfile, getAiSettings, saveAiSettings, exportData, importData, todayKey } from '../utils/storage'
+import { PROVIDERS, PROVIDER_IDS } from '../utils/aiProviders'
 import './Dashboard.css'
 
 function formatDate(key) {
@@ -18,7 +19,7 @@ export default function Dashboard() {
     const p = getProfile()
     return { bmr: String(p.bmr), neat: String(p.neat) }
   })
-  const [geminiKeyForm, setGeminiKeyForm] = useState(getGeminiKey)
+  const [aiForm, setAiForm] = useState(getAiSettings)
   const [importError, setImportError] = useState(null)
   const [importSuccess, setImportSuccess] = useState(false)
   const importRef = useRef()
@@ -58,7 +59,7 @@ export default function Dashboard() {
     const updated = { bmr: Number(profileForm.bmr), neat: Number(profileForm.neat) }
     saveProfile(updated)
     setProfile(updated)
-    saveGeminiKey(geminiKeyForm.trim())
+    saveAiSettings(aiForm)
     setSettingsOpen(false)
   }
 
@@ -189,15 +190,35 @@ export default function Dashboard() {
         </PrimaryButton>
 
         <div className="settings-section-title">AI Integration</div>
-        <FormField label="Gemini API Key">
+        <div className="ai-provider-picker">
+          {PROVIDER_IDS.map(id => (
+            <button
+              key={id}
+              type="button"
+              className={`ai-provider-pill${aiForm.active === id ? ' active' : ''}`}
+              onClick={() => setAiForm(f => ({ ...f, active: id }))}
+            >
+              {PROVIDERS[id].name}
+            </button>
+          ))}
+        </div>
+        <FormField label="API Key">
           <TextInput
-            value={geminiKeyForm}
-            onChange={setGeminiKeyForm}
-            placeholder="Paste your Gemini API key…"
+            key={aiForm.active}
+            value={aiForm[aiForm.active].key}
+            onChange={v => setAiForm(f => ({ ...f, [f.active]: { ...f[f.active], key: v } }))}
+            placeholder={`Paste your ${PROVIDERS[aiForm.active].name} API key…`}
             type="password"
           />
         </FormField>
-        <p className="settings-hint">Get a free key at aistudio.google.com. Used only on your device.</p>
+        <FormField label="Model">
+          <SelectInput
+            value={aiForm[aiForm.active].model}
+            onChange={v => setAiForm(f => ({ ...f, [f.active]: { ...f[f.active], model: v } }))}
+            options={PROVIDERS[aiForm.active].models}
+          />
+        </FormField>
+        <p className="settings-hint">API key is stored only on your device.</p>
 
         <div className="settings-section-title">Data Backup</div>
         <button className="settings-action-btn" onClick={exportData}>
