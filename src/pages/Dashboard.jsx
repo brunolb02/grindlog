@@ -185,10 +185,6 @@ export default function Dashboard() {
             min="0"
           />
         </FormField>
-        <PrimaryButton onClick={saveSettings} disabled={!canSaveSettings}>
-          Save
-        </PrimaryButton>
-
         <div className="settings-section-title">AI Integration</div>
         <div className="ai-provider-picker">
           {PROVIDER_IDS.map(id => (
@@ -219,6 +215,9 @@ export default function Dashboard() {
           />
         </FormField>
         <p className="settings-hint">API key is stored only on your device.</p>
+        <PrimaryButton onClick={saveSettings} disabled={!canSaveSettings}>
+          Save
+        </PrimaryButton>
 
         <div className="settings-section-title">Data Backup</div>
         <button className="settings-action-btn" onClick={exportData}>
