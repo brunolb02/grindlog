@@ -17,7 +17,12 @@ function formatDuration(min) {
 }
 
 function emptyForm() {
-  return { activityType: 'Gym', customName: '', duration: '', calories: '' }
+  return { activityType: 'Gym', customName: '', duration: '', calories: '', timeMode: 'now', customDatetime: '' }
+}
+
+function localDatetimeNow() {
+  const dt = new Date()
+  return new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 }
 
 export default function Workout() {
@@ -75,7 +80,13 @@ export default function Workout() {
     if (editSession) {
       updated = sessions.map(s => s.id === editSession.id ? { ...s, ...entry } : s)
     } else {
-      updated = [...sessions, { id: generateId(), date: today, timestamp: new Date().toISOString(), ...entry }]
+      const timestamp = form.timeMode === 'custom' && form.customDatetime
+        ? new Date(form.customDatetime).toISOString()
+        : new Date().toISOString()
+      const date = form.timeMode === 'custom' && form.customDatetime
+        ? form.customDatetime.slice(0, 10)
+        : today
+      updated = [...sessions, { id: generateId(), date, timestamp, ...entry }]
     }
     setSessions(updated)
     saveSessions(updated)
@@ -90,7 +101,8 @@ export default function Workout() {
   }
 
   const nameValid = form.activityType !== 'Other' || form.customName.trim() !== ''
-  const canSave = nameValid && form.duration !== '' && form.calories !== ''
+  const timeValid = form.timeMode === 'now' || form.customDatetime !== ''
+  const canSave = nameValid && form.duration !== '' && form.calories !== '' && timeValid
 
   return (
     <div className="page">
@@ -157,6 +169,33 @@ export default function Workout() {
       </div>
 
       <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={editSession ? 'Edit Session' : 'Log Session'}>
+        {!editSession && (
+          <FormField label="Time">
+            <div className="activity-picker">
+              <button
+                type="button"
+                className={`activity-pill${form.timeMode === 'now' ? ' active' : ''}`}
+                onClick={() => setForm(f => ({ ...f, timeMode: 'now', customDatetime: '' }))}
+              >Now</button>
+              <button
+                type="button"
+                className={`activity-pill${form.timeMode === 'custom' ? ' active' : ''}`}
+                onClick={() => setForm(f => ({ ...f, timeMode: 'custom', customDatetime: f.customDatetime || localDatetimeNow() }))}
+              >Past</button>
+            </div>
+          </FormField>
+        )}
+        {!editSession && form.timeMode === 'custom' && (
+          <FormField label="Date & Time">
+            <input
+              type="datetime-local"
+              className="datetime-input"
+              value={form.customDatetime}
+              max={localDatetimeNow()}
+              onChange={e => setForm(f => ({ ...f, customDatetime: e.target.value }))}
+            />
+          </FormField>
+        )}
         <FormField label="Activity">
           <div className="activity-picker">
             {['Gym', 'Cardio', 'Other'].map(type => (

@@ -3,6 +3,7 @@ import PageHeader from '../components/PageHeader'
 import Sheet from '../components/Sheet'
 import { PrimaryButton } from '../components/FormField'
 import { getMeals, getNutritionLog, saveNutritionLog, generateId, todayKey, dateKey } from '../utils/storage'
+import { MEAL_CATEGORIES } from './Library'
 import './Nutrition.css'
 
 function formatTime(iso) {
@@ -137,24 +138,34 @@ export default function Nutrition() {
           </>
         )}
 
-        <div className="sheet-section-label">All Meals</div>
         {meals.length === 0 ? (
           <div className="empty-state">
             <p>No meals in library</p>
             <p className="empty-hint">Add meals in the Library tab first</p>
           </div>
         ) : (
-          <div className="item-list">
-            {meals.map(meal => (
-              <button key={meal.id} className="list-item meal-item" onClick={() => addMeal(meal)}>
-                <div className="list-item-left meal-info">
-                  <span className="list-item-name">{meal.name}</span>
-                  <span className="meal-macros">{meal.calories} kcal · P {meal.protein}g · C {meal.carbs}g · F {meal.fat}g</span>
+          MEAL_CATEGORIES.map(cat => {
+            const catMeals = meals
+              .filter(m => (m.category || 'Breakfast') === cat)
+              .sort((a, b) => (b.createdAt || b.id).localeCompare(a.createdAt || a.id))
+            if (catMeals.length === 0) return null
+            return (
+              <div key={cat} style={{ marginBottom: 16 }}>
+                <div className="sheet-section-label">{cat}</div>
+                <div className="item-list">
+                  {catMeals.map(meal => (
+                    <button key={meal.id} className="list-item meal-item" onClick={() => addMeal(meal)}>
+                      <div className="list-item-left meal-info">
+                        <span className="list-item-name">{meal.name}</span>
+                        <span className="meal-macros">{meal.calories} kcal · P {meal.protein}g · C {meal.carbs}g · F {meal.fat}g</span>
+                      </div>
+                      <span style={{ color: 'var(--accent)', fontSize: 22 }}>+</span>
+                    </button>
+                  ))}
                 </div>
-                <span style={{ color: 'var(--accent)', fontSize: 22 }}>+</span>
-              </button>
-            ))}
-          </div>
+              </div>
+            )
+          })
         )}
       </Sheet>
     </div>

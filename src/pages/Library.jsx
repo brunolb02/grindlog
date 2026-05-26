@@ -13,13 +13,14 @@ import { fetchMacros } from '../utils/ai'
 import './Library.css'
 
 export const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Other']
+export const MEAL_CATEGORIES = ['Breakfast', 'Lunch', 'Snack', 'Dinner']
 
 function emptyExercise() {
   return { name: '', muscleGroup: 'Chest', photo: null }
 }
 
 function emptyMeal() {
-  return { name: '', calories: '', carbs: '', protein: '', fat: '' }
+  return { name: '', calories: '', carbs: '', protein: '', fat: '', category: 'Breakfast' }
 }
 
 function emptyNormalSets() {
@@ -193,16 +194,16 @@ export default function Library() {
 
   function openEditMeal(meal) {
     setEditMeal(meal)
-    setMealForm({ name: meal.name, calories: String(meal.calories), carbs: String(meal.carbs), protein: String(meal.protein), fat: String(meal.fat) })
+    setMealForm({ name: meal.name, calories: String(meal.calories), carbs: String(meal.carbs), protein: String(meal.protein), fat: String(meal.fat), category: meal.category || 'Breakfast' })
     setAiError(null)
     setMealSheet(true)
   }
 
   function saveMeal() {
-    const entry = { name: mealForm.name, calories: Number(mealForm.calories), carbs: Number(mealForm.carbs), protein: Number(mealForm.protein), fat: Number(mealForm.fat) }
+    const entry = { name: mealForm.name, calories: Number(mealForm.calories), carbs: Number(mealForm.carbs), protein: Number(mealForm.protein), fat: Number(mealForm.fat), category: mealForm.category }
     const updated = editMeal
       ? meals.map(m => m.id === editMeal.id ? { ...m, ...entry } : m)
-      : [...meals, { id: generateId(), ...entry }]
+      : [...meals, { id: generateId(), createdAt: new Date().toISOString(), ...entry }]
     setMeals(updated)
     saveMeals(updated)
     setMealSheet(false)
@@ -282,17 +283,26 @@ export default function Library() {
                 <p className="empty-hint">Tap + Add to create your first meal</p>
               </div>
             )}
-            <div className="item-list">
-              {meals.map(meal => (
-                <button key={meal.id} className="list-item meal-item" onClick={() => openEditMeal(meal)}>
-                  <div className="meal-info">
-                    <span className="list-item-name">{meal.name}</span>
-                    <span className="meal-macros">{meal.calories} kcal · P {meal.protein}g · C {meal.carbs}g · F {meal.fat}g</span>
+            {MEAL_CATEGORIES.map(cat => {
+              const catMeals = meals.filter(m => (m.category || 'Breakfast') === cat)
+              if (catMeals.length === 0) return null
+              return (
+                <div key={cat} className="meal-category-group">
+                  <div className="sheet-section-label">{cat}</div>
+                  <div className="item-list">
+                    {catMeals.map(meal => (
+                      <button key={meal.id} className="list-item meal-item" onClick={() => openEditMeal(meal)}>
+                        <div className="meal-info">
+                          <span className="list-item-name">{meal.name}</span>
+                          <span className="meal-macros">{meal.calories} kcal · P {meal.protein}g · C {meal.carbs}g · F {meal.fat}g</span>
+                        </div>
+                        <span className="chevron">›</span>
+                      </button>
+                    ))}
                   </div>
-                  <span className="chevron">›</span>
-                </button>
-              ))}
-            </div>
+                </div>
+              )
+            })}
           </>
         )}
       </div>
@@ -435,6 +445,17 @@ export default function Library() {
             ✦ Set up a free Gemini API key in <strong>Dashboard → ⚙</strong> to auto-fill macros with AI
           </p>
         )}
+        <FormField label="Category">
+          <div className="muscle-picker">
+            {MEAL_CATEGORIES.map(c => (
+              <button
+                key={c}
+                className={`muscle-chip ${mealForm.category === c ? 'active' : ''}`}
+                onClick={() => setMealForm(f => ({ ...f, category: c }))}
+              >{c}</button>
+            ))}
+          </div>
+        </FormField>
         <FormField label="Calories (kcal)">
           <NumberInput value={mealForm.calories} onChange={v => setMealForm(f => ({ ...f, calories: v }))} placeholder="0" min="0" />
         </FormField>
