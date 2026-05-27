@@ -14,7 +14,12 @@ export default function Sheet({ open, onClose, title, children }) {
     <div className="sheet-overlay" onClick={onClose}>
       <div className="sheet-panel" onClick={e => e.stopPropagation()}>
         <div className="sheet-handle" />
-        {title && <div className="sheet-title">{title}</div>}
+        {title && (
+          <div className="sheet-title">
+            {title}
+            <button className="sheet-close-btn" onClick={onClose}>×</button>
+          </div>
+        )}
         <div className="sheet-body scroll-area">
           {children}
         </div>

@@ -29,12 +29,27 @@
 }
 
 .sheet-title {
+  position: relative;
   font-size: 17px;
   font-weight: 600;
   text-align: center;
-  padding: 12px 20px;
+  padding: 12px 48px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--separator);
+}
+
+.sheet-close-btn {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
 }
 
 .sheet-body {
