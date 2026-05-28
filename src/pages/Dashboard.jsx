@@ -214,6 +214,22 @@ export default function Dashboard() {
             options={PROVIDERS[aiForm.active].models}
           />
         </FormField>
+        {aiForm.active === 'openrouter' && (
+          <p className="settings-hint">
+            OpenRouter has free models — no credit card needed.{' '}
+            <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer" className="settings-hint-link">
+              Get your free API key here.
+            </a>
+          </p>
+        )}
+        {aiForm.active === 'gemini' && (
+          <p className="settings-hint">
+            Gemini has a free tier — no credit card needed.{' '}
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="settings-hint-link">
+              Get your free API key here.
+            </a>
+          </p>
+        )}
         <p className="settings-hint">API key is stored only on your device.</p>
         <PrimaryButton onClick={saveSettings} disabled={!canSaveSettings}>
           Save

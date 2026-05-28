@@ -103,9 +103,8 @@ export function importData(json) {
 
 // AI provider settings
 const DEFAULT_AI_SETTINGS = {
-  active: 'groq',
-  groq: { key: '', model: 'llama-3.3-70b-versatile' },
-  openrouter: { key: '', model: 'meta-llama/llama-3.1-8b-instruct:free' },
+  active: 'openrouter',
+  openrouter: { key: '', model: 'google/gemini-flash-1.5:free' },
   gemini: { key: '', model: 'gemini-1.5-flash' },
 }
 
@@ -119,7 +118,10 @@ export function getAiSettings() {
     localStorage.removeItem('gl_gemini_key')
     return migrated
   }
-  return { ...DEFAULT_AI_SETTINGS, ...stored }
+  const merged = { ...DEFAULT_AI_SETTINGS, ...stored }
+  // migrate users who had groq as active provider
+  if (merged.active === 'groq') merged.active = 'openrouter'
+  return merged
 }
 
 export function saveAiSettings(settings) {
