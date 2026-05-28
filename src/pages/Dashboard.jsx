@@ -3,7 +3,7 @@ import PageHeader from '../components/PageHeader'
 import Sheet from '../components/Sheet'
 import { FormField, TextInput, NumberInput, SelectInput, PrimaryButton } from '../components/FormField'
 import { getNutritionLog, getSessions, getProfile, saveProfile, getAiSettings, saveAiSettings, exportData, importData, todayKey } from '../utils/storage'
-import { PROVIDERS, PROVIDER_IDS } from '../utils/aiProviders'
+import { PROVIDERS } from '../utils/aiProviders'
 import './Dashboard.css'
 
 function formatDate(key) {
@@ -186,50 +186,27 @@ export default function Dashboard() {
           />
         </FormField>
         <div className="settings-section-title">AI Integration</div>
-        <div className="ai-provider-picker">
-          {PROVIDER_IDS.map(id => (
-            <button
-              key={id}
-              type="button"
-              className={`ai-provider-pill${aiForm.active === id ? ' active' : ''}`}
-              onClick={() => setAiForm(f => ({ ...f, active: id }))}
-            >
-              {PROVIDERS[id].name}
-            </button>
-          ))}
-        </div>
-        <FormField label="API Key">
+        <FormField label="Gemini API Key">
           <TextInput
-            key={aiForm.active}
-            value={aiForm[aiForm.active].key}
-            onChange={v => setAiForm(f => ({ ...f, [f.active]: { ...f[f.active], key: v } }))}
-            placeholder={`Paste your ${PROVIDERS[aiForm.active].name} API key…`}
+            value={aiForm.gemini.key}
+            onChange={v => setAiForm(f => ({ ...f, gemini: { ...f.gemini, key: v } }))}
+            placeholder="Paste your Gemini API key…"
             type="password"
           />
         </FormField>
         <FormField label="Model">
           <SelectInput
-            value={aiForm[aiForm.active].model}
-            onChange={v => setAiForm(f => ({ ...f, [f.active]: { ...f[f.active], model: v } }))}
-            options={PROVIDERS[aiForm.active].models}
+            value={aiForm.gemini.model}
+            onChange={v => setAiForm(f => ({ ...f, gemini: { ...f.gemini, model: v } }))}
+            options={PROVIDERS.gemini.models}
           />
         </FormField>
-        {aiForm.active === 'openrouter' && (
-          <p className="settings-hint">
-            OpenRouter has free models — no credit card needed.{' '}
-            <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer" className="settings-hint-link">
-              Get your free API key here.
-            </a>
-          </p>
-        )}
-        {aiForm.active === 'gemini' && (
-          <p className="settings-hint">
-            Gemini has a free tier — no credit card needed.{' '}
-            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="settings-hint-link">
-              Get your free API key here.
-            </a>
-          </p>
-        )}
+        <p className="settings-hint">
+          Free tier available — no credit card needed.{' '}
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="settings-hint-link">
+            Get your API key at Google AI Studio.
+          </a>
+        </p>
         <p className="settings-hint">API key is stored only on your device.</p>
         <PrimaryButton onClick={saveSettings} disabled={!canSaveSettings}>
           Save

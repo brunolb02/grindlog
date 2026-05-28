@@ -103,9 +103,8 @@ export function importData(json) {
 
 // AI provider settings
 const DEFAULT_AI_SETTINGS = {
-  active: 'openrouter',
-  openrouter: { key: '', model: 'google/gemini-flash-1.5:free' },
-  gemini: { key: '', model: 'gemini-1.5-flash' },
+  active: 'gemini',
+  gemini: { key: '', model: 'gemini-2.5-flash' },
 }
 
 export function getAiSettings() {
@@ -113,14 +112,17 @@ export function getAiSettings() {
   // migrate old single gemini key if present
   const legacyKey = localStorage.getItem('gl_gemini_key')
   if (!stored && legacyKey) {
-    const migrated = { ...DEFAULT_AI_SETTINGS, active: 'gemini', gemini: { key: legacyKey, model: 'gemini-1.5-flash' } }
+    const migrated = { ...DEFAULT_AI_SETTINGS, gemini: { key: legacyKey, model: 'gemini-2.0-flash' } }
     save(KEYS.aiSettings, migrated)
     localStorage.removeItem('gl_gemini_key')
     return migrated
   }
   const merged = { ...DEFAULT_AI_SETTINGS, ...stored }
-  // migrate users who had groq as active provider
-  if (merged.active === 'groq') merged.active = 'openrouter'
+  // migrate to gemini-only setup and update deprecated model IDs
+  if (merged.active !== 'gemini') merged.active = 'gemini'
+  if (!merged.gemini?.model?.startsWith('gemini-2.5')) {
+    merged.gemini.model = 'gemini-2.5-flash'
+  }
   return merged
 }
 

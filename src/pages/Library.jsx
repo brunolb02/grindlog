@@ -20,7 +20,7 @@ function emptyExercise() {
 }
 
 function emptyMeal() {
-  return { name: '', calories: '', carbs: '', protein: '', fat: '', category: 'Breakfast' }
+  return { name: '', aiDescription: '', calories: '', carbs: '', protein: '', fat: '', category: 'Breakfast' }
 }
 
 function emptyNormalSets() {
@@ -170,7 +170,7 @@ export default function Library() {
     setAiLoading(true)
     setAiError(null)
     try {
-      const macros = await fetchMacros(mealForm.name, activeProvider, activeProviderSettings.key, activeProviderSettings.model)
+      const macros = await fetchMacros(mealForm.aiDescription.trim() || mealForm.name, activeProvider, activeProviderSettings.key, activeProviderSettings.model)
       setMealForm(f => ({
         ...f,
         calories: String(macros.calories),
@@ -194,13 +194,13 @@ export default function Library() {
 
   function openEditMeal(meal) {
     setEditMeal(meal)
-    setMealForm({ name: meal.name, calories: String(meal.calories), carbs: String(meal.carbs), protein: String(meal.protein), fat: String(meal.fat), category: meal.category || 'Breakfast' })
+    setMealForm({ name: meal.name, aiDescription: '', calories: String(meal.calories), carbs: String(meal.carbs), protein: String(meal.protein), fat: String(meal.fat), category: meal.category || 'Breakfast' })
     setAiError(null)
     setMealSheet(true)
   }
 
   function saveMeal() {
-    const entry = { name: mealForm.name, calories: Number(mealForm.calories), carbs: Number(mealForm.carbs), protein: Number(mealForm.protein), fat: Number(mealForm.fat), category: mealForm.category }
+    const entry = { name: mealForm.name, calories: Number(mealForm.calories), carbs: Number(mealForm.carbs), protein: Number(mealForm.protein), fat: Number(mealForm.fat), category: mealForm.category  }
     const updated = editMeal
       ? meals.map(m => m.id === editMeal.id ? { ...m, ...entry } : m)
       : [...meals, { id: generateId(), createdAt: new Date().toISOString(), ...entry }]
@@ -429,6 +429,15 @@ export default function Library() {
         <FormField label="Meal Name">
           <TextInput value={mealForm.name} onChange={v => setMealForm(f => ({ ...f, name: v }))} placeholder="e.g. Chicken & Rice" />
         </FormField>
+        {hasAiKey && (
+          <FormField label="AI Description (optional)">
+            <TextInput
+              value={mealForm.aiDescription}
+              onChange={v => setMealForm(f => ({ ...f, aiDescription: v }))}
+              placeholder="e.g. 6 magic toast Lev de cacau"
+            />
+          </FormField>
+        )}
         {hasAiKey ? (
           <div className="ai-fill-row">
             <button
