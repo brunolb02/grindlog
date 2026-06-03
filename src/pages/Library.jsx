@@ -159,10 +159,12 @@ export default function Library() {
   }
 
   function logsForExercise(exId) {
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 3)
+    const cutoffStr = cutoff.toISOString()
     return exerciseLogs
-      .filter(l => l.exerciseId === exId)
+      .filter(l => l.exerciseId === exId && l.timestamp >= cutoffStr)
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-      .slice(0, 5)
   }
 
   // ─── Meal CRUD ────────────────────────────────────────────────────────────

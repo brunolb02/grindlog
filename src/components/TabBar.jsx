@@ -36,6 +36,19 @@ const TABS = [
     ),
   },
   {
+    id: 'stats',
+    label: 'Stats',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <polyline points="3,17 8,11 13,14 21,6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="3" cy="17" r="1.5" fill="currentColor"/>
+        <circle cx="8" cy="11" r="1.5" fill="currentColor"/>
+        <circle cx="13" cy="14" r="1.5" fill="currentColor"/>
+        <circle cx="21" cy="6" r="1.5" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
     id: 'library',
     label: 'Library',
     icon: (
