@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import './Sheet.css'
 
-export default function Sheet({ open, onClose, title, children }) {
+export default function Sheet({ open, onClose, title, headerContent, children }) {
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = ''
@@ -20,6 +20,7 @@ export default function Sheet({ open, onClose, title, children }) {
             <button className="sheet-close-btn" onClick={onClose}>×</button>
           </div>
         )}
+        {headerContent && <div className="sheet-header-content">{headerContent}</div>}
         <div className="sheet-body scroll-area">
           {children}
         </div>

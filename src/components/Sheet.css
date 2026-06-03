@@ -52,6 +52,12 @@
   padding: 4px 8px;
 }
 
+.sheet-header-content {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--separator);
+}
+
 .sheet-body {
   flex: 1;
   padding: 16px;
