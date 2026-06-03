@@ -23,15 +23,23 @@ function emptyMealForm(category) {
   return { name: '', aiDescription: '', calories: '', carbs: '', protein: '', fat: '', category: category || defaultCategory() }
 }
 
-function MealRow({ meal, onAdd }) {
+function localDatetimeNow() {
+  const dt = new Date()
+  return new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+}
+
+function MealRow({ meal, onAdd, onEdit }) {
   return (
-    <button className="list-item meal-item" onClick={() => onAdd(meal)}>
-      <div className="list-item-left meal-info">
-        <span className="list-item-name">{meal.name}</span>
-        <span className="meal-macros">{meal.calories} kcal · P {meal.protein}g · C {meal.carbs}g · F {meal.fat}g</span>
-      </div>
-      <span className="log-add-icon">+</span>
-    </button>
+    <div className="list-item meal-item">
+      <button className="meal-row-main" onClick={() => onAdd(meal)}>
+        <div className="meal-info">
+          <span className="list-item-name">{meal.name}</span>
+          <span className="meal-macros">{meal.calories} kcal · P {meal.protein}g · C {meal.carbs}g · F {meal.fat}g</span>
+        </div>
+        <span className="log-add-icon">+</span>
+      </button>
+      <button className="meal-edit-inline-btn" onClick={() => onEdit(meal)}>···</button>
+    </div>
   )
 }
 
@@ -39,14 +47,18 @@ export default function Nutrition() {
   const [log, setLog] = useState(getNutritionLog)
   const [meals, setMeals] = useState(getMeals)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [sheetView, setSheetView] = useState('list') // 'list' | 'create'
+  const [sheetView, setSheetView] = useState('list') // 'list' | 'create' | 'edit'
   const [selectedDate] = useState(todayKey())
 
   const [activeCategory, setActiveCategory] = useState(defaultCategory)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
+  const [timeMode, setTimeMode] = useState('now')
+  const [customDatetime, setCustomDatetime] = useState('')
+
   const [mealForm, setMealForm] = useState(() => emptyMealForm())
+  const [sheetEditMeal, setSheetEditMeal] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState(null)
   const aiSettings = getAiSettings()
@@ -85,10 +97,18 @@ export default function Nutrition() {
     setActiveCategory(defaultCategory())
     setSearchOpen(false)
     setSearchQuery('')
+    setTimeMode('now')
+    setCustomDatetime('')
     setSheetOpen(true)
   }
 
   function addMeal(meal) {
+    const timestamp = timeMode === 'custom' && customDatetime
+      ? new Date(customDatetime).toISOString()
+      : new Date().toISOString()
+    const date = timeMode === 'custom' && customDatetime
+      ? customDatetime.slice(0, 10)
+      : selectedDate
     const entry = {
       id: generateId(),
       mealId: meal.id,
@@ -97,8 +117,8 @@ export default function Nutrition() {
       carbs: meal.carbs,
       protein: meal.protein,
       fat: meal.fat,
-      date: selectedDate,
-      timestamp: new Date().toISOString(),
+      date,
+      timestamp,
     }
     const updated = [...log, entry]
     setLog(updated)
@@ -140,6 +160,23 @@ export default function Nutrition() {
     setMealForm(emptyMealForm(activeCategory))
     setAiError(null)
     setSheetView('create')
+  }
+
+  function openEditView(meal) {
+    setSheetEditMeal(meal)
+    setMealForm({ name: meal.name, aiDescription: '', calories: String(meal.calories), carbs: String(meal.carbs), protein: String(meal.protein), fat: String(meal.fat), category: meal.category || defaultCategory() })
+    setAiError(null)
+    setSheetView('edit')
+  }
+
+  function saveEditedMeal() {
+    const updated = meals.map(m => m.id === sheetEditMeal.id
+      ? { ...m, name: mealForm.name, calories: Number(mealForm.calories), carbs: Number(mealForm.carbs), protein: Number(mealForm.protein), fat: Number(mealForm.fat), category: mealForm.category }
+      : m
+    )
+    setMeals(updated)
+    saveMeals(updated)
+    setSheetView('list')
   }
 
   function createAndLog() {
@@ -246,11 +283,36 @@ export default function Nutrition() {
       <Sheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
-        title={sheetView === 'create' ? 'New Meal' : 'Log a Meal'}
+        title={sheetView === 'create' ? 'New Meal' : sheetView === 'edit' ? 'Edit Meal' : 'Log a Meal'}
         headerContent={sheetHeaderContent}
       >
         {sheetView === 'list' ? (
           <>
+            <FormField label="Time">
+              <div className="activity-picker">
+                <button
+                  type="button"
+                  className={`activity-pill${timeMode === 'now' ? ' active' : ''}`}
+                  onClick={() => { setTimeMode('now'); setCustomDatetime('') }}
+                >Now</button>
+                <button
+                  type="button"
+                  className={`activity-pill${timeMode === 'custom' ? ' active' : ''}`}
+                  onClick={() => { setTimeMode('custom'); setCustomDatetime(c => c || localDatetimeNow()) }}
+                >Past</button>
+              </div>
+            </FormField>
+            {timeMode === 'custom' && (
+              <FormField label="Date & Time">
+                <input
+                  type="datetime-local"
+                  className="datetime-input"
+                  value={customDatetime}
+                  max={localDatetimeNow()}
+                  onChange={e => setCustomDatetime(e.target.value)}
+                />
+              </FormField>
+            )}
             {searchOpen ? (
               searchQuery.trim() === '' ? (
                 <div className="empty-state" style={{ padding: '24px 0' }}>
@@ -263,7 +325,7 @@ export default function Nutrition() {
               ) : (
                 <div className="item-list">
                   {searchResults.map(meal => (
-                    <MealRow key={meal.id} meal={meal} onAdd={addMeal} />
+                    <MealRow key={meal.id} meal={meal} onAdd={addMeal} onEdit={openEditView} />
                   ))}
                 </div>
               )
@@ -275,7 +337,7 @@ export default function Nutrition() {
               ) : (
                 <div className="item-list">
                   {categoryMeals.map(meal => (
-                    <MealRow key={meal.id} meal={meal} onAdd={addMeal} />
+                    <MealRow key={meal.id} meal={meal} onAdd={addMeal} onEdit={openEditView} />
                   ))}
                 </div>
               )
@@ -284,7 +346,7 @@ export default function Nutrition() {
               + New Meal
             </button>
           </>
-        ) : (
+        ) : sheetView === 'create' ? (
           <>
             <button className="back-btn" onClick={() => setSheetView('list')}>← Back</button>
             <FormField label="Meal Name">
@@ -340,11 +402,92 @@ export default function Nutrition() {
                 <NumberInput value={mealForm.fat} onChange={v => setMealForm(f => ({ ...f, fat: v }))} placeholder="0" min="0" />
               </FormField>
             </div>
+            <FormField label="Time">
+              <div className="activity-picker">
+                <button
+                  type="button"
+                  className={`activity-pill${timeMode === 'now' ? ' active' : ''}`}
+                  onClick={() => { setTimeMode('now'); setCustomDatetime('') }}
+                >Now</button>
+                <button
+                  type="button"
+                  className={`activity-pill${timeMode === 'custom' ? ' active' : ''}`}
+                  onClick={() => { setTimeMode('custom'); setCustomDatetime(c => c || localDatetimeNow()) }}
+                >Past</button>
+              </div>
+            </FormField>
+            {timeMode === 'custom' && (
+              <FormField label="Date & Time">
+                <input
+                  type="datetime-local"
+                  className="datetime-input"
+                  value={customDatetime}
+                  max={localDatetimeNow()}
+                  onChange={e => setCustomDatetime(e.target.value)}
+                />
+              </FormField>
+            )}
             <PrimaryButton onClick={createAndLog} disabled={!mealForm.name.trim() || !mealForm.calories}>
-              Add & Log Now
+              {timeMode === 'custom' ? 'Add & Log' : 'Add & Log Now'}
             </PrimaryButton>
           </>
-        )}
+        ) : sheetView === 'edit' ? (
+          <>
+            <button className="back-btn" onClick={() => setSheetView('list')}>← Back</button>
+            <FormField label="Meal Name">
+              <TextInput value={mealForm.name} onChange={v => setMealForm(f => ({ ...f, name: v }))} placeholder="e.g. Chicken & Rice" />
+            </FormField>
+            {hasAiKey && (
+              <FormField label="AI Description (optional)">
+                <TextInput
+                  value={mealForm.aiDescription}
+                  onChange={v => setMealForm(f => ({ ...f, aiDescription: v }))}
+                  placeholder="e.g. 6 magic toast Lev de cacau"
+                />
+              </FormField>
+            )}
+            {hasAiKey ? (
+              <div className="ai-fill-row">
+                <button
+                  className="ai-fill-btn"
+                  onClick={fillWithAi}
+                  disabled={!mealForm.name.trim() || aiLoading}
+                >
+                  {aiLoading ? 'Filling…' : '✦ Fill macros with AI'}
+                </button>
+                {aiError && <span className="ai-fill-error">{aiError}</span>}
+              </div>
+            ) : null}
+            <FormField label="Category">
+              <div className="muscle-picker">
+                {MEAL_CATEGORIES.map(c => (
+                  <button
+                    key={c}
+                    className={`muscle-chip ${mealForm.category === c ? 'active' : ''}`}
+                    onClick={() => setMealForm(f => ({ ...f, category: c }))}
+                  >{c}</button>
+                ))}
+              </div>
+            </FormField>
+            <FormField label="Calories (kcal)">
+              <NumberInput value={mealForm.calories} onChange={v => setMealForm(f => ({ ...f, calories: v }))} placeholder="0" min="0" />
+            </FormField>
+            <div className="macro-row">
+              <FormField label="Carbs (g)">
+                <NumberInput value={mealForm.carbs} onChange={v => setMealForm(f => ({ ...f, carbs: v }))} placeholder="0" min="0" />
+              </FormField>
+              <FormField label="Protein (g)">
+                <NumberInput value={mealForm.protein} onChange={v => setMealForm(f => ({ ...f, protein: v }))} placeholder="0" min="0" />
+              </FormField>
+              <FormField label="Fat (g)">
+                <NumberInput value={mealForm.fat} onChange={v => setMealForm(f => ({ ...f, fat: v }))} placeholder="0" min="0" />
+              </FormField>
+            </div>
+            <PrimaryButton onClick={saveEditedMeal} disabled={!mealForm.name.trim() || !mealForm.calories}>
+              Save Changes
+            </PrimaryButton>
+          </>
+        ) : null}
       </Sheet>
     </div>
   )

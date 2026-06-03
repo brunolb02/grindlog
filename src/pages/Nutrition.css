@@ -320,6 +320,36 @@
   color: var(--text);
 }
 
+.meal-item {
+  padding: 0;
+}
+
+.meal-row-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  text-align: left;
+  gap: 12px;
+}
+
+.meal-row-main:active {
+  background: var(--separator);
+}
+
+.meal-edit-inline-btn {
+  padding: 12px 14px;
+  font-size: 18px;
+  color: var(--text-tertiary);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.meal-edit-inline-btn:active {
+  color: var(--text);
+}
+
 .meal-info {
   flex-direction: column;
   align-items: flex-start;
