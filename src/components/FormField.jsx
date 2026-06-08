@@ -26,13 +26,11 @@ export function NumberInput({ value, onChange, placeholder, min, step, ...props 
   return (
     <input
       className="text-input number-input"
-      type="number"
+      type="text"
       inputMode="decimal"
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={e => onChange(e.target.value.replace(',', '.'))}
       placeholder={placeholder}
-      min={min}
-      step={step}
       {...props}
     />
   )
