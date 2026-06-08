@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
 import Sheet from '../components/Sheet'
-import { FormField, TextInput, NumberInput, PrimaryButton } from '../components/FormField'
+import { FormField, TextInput, NumberInput, PrimaryButton, DestructiveButton } from '../components/FormField'
 import { getMeals, saveMeals, getNutritionLog, saveNutritionLog, getAiSettings, generateId, todayKey } from '../utils/storage'
 import { fetchMacros } from '../utils/ai'
-import { MEAL_CATEGORIES } from './Library'
+
+export const MEAL_CATEGORIES = ['Breakfast', 'Lunch', 'Snack', 'Dinner']
 import './Nutrition.css'
 
 function formatTime(iso) {
@@ -179,7 +180,14 @@ export default function Nutrition() {
     setSheetView('list')
   }
 
-  function createAndLog() {
+  function deleteSavedMeal() {
+    const updated = meals.filter(m => m.id !== sheetEditMeal.id)
+    setMeals(updated)
+    saveMeals(updated)
+    setSheetOpen(false)
+  }
+
+  function createAndLog(saveToHistory) {
     const newMeal = {
       id: generateId(),
       createdAt: new Date().toISOString(),
@@ -190,9 +198,11 @@ export default function Nutrition() {
       fat: Number(mealForm.fat),
       category: mealForm.category,
     }
-    const updatedMeals = [...meals, newMeal]
-    setMeals(updatedMeals)
-    saveMeals(updatedMeals)
+    if (saveToHistory) {
+      const updatedMeals = [...meals, newMeal]
+      setMeals(updatedMeals)
+      saveMeals(updatedMeals)
+    }
     addMeal(newMeal)
   }
 
@@ -313,6 +323,9 @@ export default function Nutrition() {
                 />
               </FormField>
             )}
+            <button className="create-meal-btn" onClick={openCreateView}>
+              + New Meal
+            </button>
             {searchOpen ? (
               searchQuery.trim() === '' ? (
                 <div className="empty-state" style={{ padding: '24px 0' }}>
@@ -342,9 +355,6 @@ export default function Nutrition() {
                 </div>
               )
             )}
-            <button className="create-meal-btn" onClick={openCreateView}>
-              + New Meal
-            </button>
           </>
         ) : sheetView === 'create' ? (
           <>
@@ -427,9 +437,18 @@ export default function Nutrition() {
                 />
               </FormField>
             )}
-            <PrimaryButton onClick={createAndLog} disabled={!mealForm.name.trim() || !mealForm.calories}>
-              {timeMode === 'custom' ? 'Add & Log' : 'Add & Log Now'}
-            </PrimaryButton>
+            <div className="log-action-row">
+              <button
+                className="log-only-btn"
+                onClick={() => createAndLog(false)}
+                disabled={!mealForm.name.trim() || !mealForm.calories}
+              >
+                {timeMode === 'custom' ? 'Log' : 'Log Now'}
+              </button>
+              <PrimaryButton onClick={() => createAndLog(true)} disabled={!mealForm.name.trim() || !mealForm.calories}>
+                {timeMode === 'custom' ? 'Save & Log' : 'Save & Log'}
+              </PrimaryButton>
+            </div>
           </>
         ) : sheetView === 'edit' ? (
           <>
@@ -486,6 +505,7 @@ export default function Nutrition() {
             <PrimaryButton onClick={saveEditedMeal} disabled={!mealForm.name.trim() || !mealForm.calories}>
               Save Changes
             </PrimaryButton>
+            <DestructiveButton onClick={deleteSavedMeal}>Delete Meal</DestructiveButton>
           </>
         ) : null}
       </Sheet>

@@ -18,10 +18,12 @@ const TABS = [
     label: 'Workout',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M6.5 8.5H3.5C3.22 8.5 3 8.72 3 9v6c0 .28.22.5.5.5h3c.28 0 .5-.22.5-.5V9c0-.28-.22-.5-.5-.5Z" fill="currentColor"/>
-        <path d="M20.5 8.5h-3c-.28 0-.5.22-.5.5v6c0 .28.22.5.5.5h3c.28 0 .5-.22.5-.5V9c0-.28-.22-.5-.5-.5Z" fill="currentColor"/>
-        <path d="M7 11.5h10M7 12.5h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M2 11.5h1.5M20.5 11.5H22M2 12.5h1.5M20.5 12.5H22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <circle cx="13" cy="4" r="2" fill="currentColor"/>
+        <path d="M12.5 6L11 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M12 9L9 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M12 9L15.5 10.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M11 12L8.5 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M11 12L15 15L13 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
   },
@@ -30,8 +32,12 @@ const TABS = [
     label: 'Nutrition',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M12 3C8.5 3 5 6 5 10c0 3 1.5 5.5 4 7v2.5c0 .83.67 1.5 1.5 1.5h3c.83 0 1.5-.67 1.5-1.5V17c2.5-1.5 4-4 4-7 0-4-3.5-7-7-7Z" fill="currentColor" opacity="0.85"/>
-        <path d="M9.5 3.5C9.5 5 9 6.5 8 7.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
+        <rect x="5.5" y="3" width="1.5" height="7" rx="0.75" fill="currentColor"/>
+        <rect x="8.25" y="3" width="1.5" height="7" rx="0.75" fill="currentColor"/>
+        <rect x="11" y="3" width="1.5" height="7" rx="0.75" fill="currentColor"/>
+        <rect x="8.25" y="9" width="1.5" height="12" rx="0.75" fill="currentColor"/>
+        <path d="M15 3H17C18 4 18.5 7 17 10H15Z" fill="currentColor"/>
+        <rect x="15" y="10" width="2" height="11" rx="1" fill="currentColor"/>
       </svg>
     ),
   },
@@ -50,12 +56,16 @@ const TABS = [
   },
   {
     id: 'library',
-    label: 'Library',
+    label: 'Exercises',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <rect x="4" y="4" width="6" height="16" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="12" y="4" width="3" height="16" rx="1.5" fill="currentColor" opacity="0.7"/>
-        <rect x="17" y="4" width="3" height="16" rx="1.5" fill="currentColor" opacity="0.5"/>
+        <rect x="10.5" y="11" width="3" height="2" rx="0.5" fill="currentColor"/>
+        <rect x="2" y="9.5" width="4" height="5" rx="1.5" fill="currentColor" opacity="0.9"/>
+        <rect x="18" y="9.5" width="4" height="5" rx="1.5" fill="currentColor" opacity="0.9"/>
+        <rect x="5.5" y="8" width="3" height="8" rx="1" fill="currentColor"/>
+        <rect x="15.5" y="8" width="3" height="8" rx="1" fill="currentColor"/>
+        <rect x="8" y="10.5" width="2.5" height="3" rx="0.5" fill="currentColor" opacity="0.7"/>
+        <rect x="13.5" y="10.5" width="2.5" height="3" rx="0.5" fill="currentColor" opacity="0.7"/>
       </svg>
     ),
   },

@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react'
 import PageHeader from '../components/PageHeader'
 import Sheet from '../components/Sheet'
 import { FormField, TextInput, NumberInput, SelectInput, PrimaryButton } from '../components/FormField'
-import { getNutritionLog, getSessions, getProfile, saveProfile, getAiSettings, saveAiSettings, exportData, importData, todayKey } from '../utils/storage'
+import { getNutritionLog, getSessions, getProfile, saveProfile, getWaterLog, saveWaterLog, getAiSettings, saveAiSettings, exportData, importData, todayKey } from '../utils/storage'
 import { PROVIDERS } from '../utils/aiProviders'
 import './Dashboard.css'
 
@@ -14,10 +14,11 @@ export default function Dashboard() {
   const [log] = useState(getNutritionLog)
   const [sessions] = useState(getSessions)
   const [profile, setProfile] = useState(getProfile)
+  const [waterLog, setWaterLog] = useState(getWaterLog)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profileForm, setProfileForm] = useState(() => {
     const p = getProfile()
-    return { bmr: String(p.bmr), neat: String(p.neat) }
+    return { bmr: String(p.bmr), neat: String(p.neat), waterGoal: p.waterGoal ? String(p.waterGoal) : '' }
   })
   const [aiForm, setAiForm] = useState(getAiSettings)
   const [importError, setImportError] = useState(null)
@@ -55,8 +56,19 @@ export default function Dashboard() {
     return Math.round((g / totalMacroG) * 100)
   }
 
+  const waterGoalLiters = profile.waterGoal || 0
+  const todayDone = !!waterLog[selectedDate]
+
+  function toggleWater() {
+    const updated = { ...waterLog }
+    if (todayDone) delete updated[selectedDate]
+    else updated[selectedDate] = true
+    setWaterLog(updated)
+    saveWaterLog(updated)
+  }
+
   function saveSettings() {
-    const updated = { bmr: Number(profileForm.bmr), neat: Number(profileForm.neat) }
+    const updated = { bmr: Number(profileForm.bmr), neat: Number(profileForm.neat), waterGoal: Number(profileForm.waterGoal) || 0 }
     saveProfile(updated)
     setProfile(updated)
     saveAiSettings(aiForm)
@@ -165,6 +177,39 @@ export default function Dashboard() {
             ))}
           </div>
         )}
+
+        {/* Water */}
+        <div className="dash-card">
+          <div className="dash-card-title">Water Goal</div>
+          {waterGoalLiters === 0 ? (
+            <p className="water-no-goal">
+              Set your daily water goal in{' '}
+              <button className="water-settings-link" onClick={() => setSettingsOpen(true)}>Settings ⚙</button>
+            </p>
+          ) : (
+            <div className="water-check">
+              <div className="water-cup-wrap">
+                <div className="water-rim" />
+                <div className="water-cup">
+                  <div className="water-fill" style={{ height: todayDone ? '100%' : '0%' }} />
+                </div>
+              </div>
+              <div className="water-check-info">
+                {todayDone ? (
+                  <>
+                    <span className="water-check-label done">{waterGoalLiters} L — Done ✓</span>
+                    <button className="water-undo-btn" onClick={toggleWater}>Undo</button>
+                  </>
+                ) : (
+                  <>
+                    <span className="water-check-label">{waterGoalLiters} L today</span>
+                    <button className="water-done-btn" onClick={toggleWater}>Done</button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Settings sheet */}
@@ -183,6 +228,15 @@ export default function Dashboard() {
             onChange={v => setProfileForm(f => ({ ...f, neat: v }))}
             placeholder="e.g. 350"
             min="0"
+          />
+        </FormField>
+        <FormField label="Daily Water Goal (liters)">
+          <NumberInput
+            value={profileForm.waterGoal}
+            onChange={v => setProfileForm(f => ({ ...f, waterGoal: v }))}
+            placeholder="e.g. 2.0"
+            min="0"
+            step="0.25"
           />
         </FormField>
         <div className="settings-section-title">AI Integration</div>

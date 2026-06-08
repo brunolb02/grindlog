@@ -292,3 +292,100 @@
   margin-bottom: 14px;
   line-height: 1.5;
 }
+
+/* ── Water tracker ── */
+.water-no-goal {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.water-settings-link {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.water-check {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-top: 10px;
+}
+
+.water-cup-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.water-rim {
+  width: 52px;
+  height: 4px;
+  background: var(--text-tertiary);
+  border-radius: 2px;
+  opacity: 0.45;
+}
+
+.water-cup {
+  width: 44px;
+  height: 68px;
+  border: 2.5px solid var(--text-tertiary);
+  border-top: none;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-input);
+}
+
+.water-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, rgba(10,132,255,0.35) 0%, rgba(10,132,255,0.65) 100%);
+  transition: height 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.water-check-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.water-check-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.water-check-label.done {
+  color: var(--accent-green);
+  font-weight: 600;
+}
+
+.water-done-btn {
+  background: var(--accent);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  align-self: flex-start;
+}
+
+.water-done-btn:active {
+  opacity: 0.8;
+}
+
+.water-undo-btn {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  padding: 2px 0;
+  align-self: flex-start;
+}

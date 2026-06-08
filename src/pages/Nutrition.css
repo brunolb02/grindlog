@@ -193,6 +193,7 @@
 .create-meal-btn {
   width: 100%;
   margin-top: 14px;
+  margin-bottom: 14px;
   padding: 14px;
   border-radius: 12px;
   border: 1.5px dashed var(--separator);
@@ -205,6 +206,37 @@
 
 .create-meal-btn:active {
   background: var(--bg-input);
+}
+
+/* Log action row (two buttons) */
+.log-action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.log-action-row .primary-btn {
+  flex: 1;
+}
+
+.log-only-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--separator);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  text-align: center;
+}
+
+.log-only-btn:active:not(:disabled) {
+  background: var(--bg-input);
+}
+
+.log-only-btn:disabled {
+  opacity: 0.4;
 }
 
 /* Back button in create view */

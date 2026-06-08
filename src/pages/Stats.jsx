@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
-import { getNutritionLog, getSessions, getExerciseLogs, getExercises, getProfile, todayKey } from '../utils/storage'
+import { getNutritionLog, getSessions, getExerciseLogs, getExercises, getProfile, getWaterLog, todayKey } from '../utils/storage'
 import { MUSCLE_GROUPS } from './Library'
 import './Stats.css'
 
@@ -167,6 +167,7 @@ export default function Stats() {
   const [exerciseLogs] = useState(getExerciseLogs)
   const [exercises] = useState(getExercises)
   const [profile] = useState(getProfile)
+  const [waterLog] = useState(getWaterLog)
 
   const daySlots = useMemo(() => {
     if (period === '7') return getDaySlots(7)
@@ -234,6 +235,12 @@ export default function Stats() {
     const totalCal = active.reduce((s, d) => s + sessionsByDay[d].calories, 0)
     return { totalSessions, avgCal: Math.round(totalCal / totalSessions) }
   }, [daySlots, sessionsByDay])
+
+  const waterStats = useMemo(() => {
+    const completed = daySlots.filter(d => !!waterLog[d]).length
+    if (completed === 0) return null
+    return { completed, total: daySlots.length }
+  }, [waterLog, daySlots])
 
   const muscleExercises = useMemo(
     () => exercises.filter(e => (e.muscleGroup || 'Other') === activeMuscle),
@@ -303,6 +310,24 @@ export default function Stats() {
             </div>
           ) : (
             <p className="stats-empty-hint">No workout data for this period</p>
+          )}
+        </div>
+
+        {/* ── Water card ── */}
+        <div className="stats-card">
+          <div className="stats-card-title">Water</div>
+          <BarChart
+            slots={daySlots}
+            getValue={d => waterLog[d] ? 1 : 0}
+            color="var(--accent)"
+            targetValue={1}
+          />
+          {waterStats ? (
+            <div className="stats-chips">
+              <StatChip label="Goal days" value={`${waterStats.completed}/${waterStats.total}`} color="var(--accent)" />
+            </div>
+          ) : (
+            <p className="stats-empty-hint">No water data for this period</p>
           )}
         </div>
 

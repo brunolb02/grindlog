@@ -4,6 +4,7 @@ const KEYS = {
   exerciseLogs: 'gl_exercise_logs', // sets/reps logs per exercise
   meals: 'gl_meals',
   nutritionLog: 'gl_nutrition_log',
+  waterLog: 'gl_water_log',
   profile: 'gl_profile',
   aiSettings: 'gl_ai_settings',
 }
@@ -61,8 +62,16 @@ export function saveNutritionLog(list) {
   save(KEYS.nutritionLog, list)
 }
 
-// User profile (BMR, NEAT)
-const DEFAULT_PROFILE = { bmr: 1880, neat: 350 }
+// Water log: { 'YYYY-MM-DD': glasses }
+export function getWaterLog() {
+  return load(KEYS.waterLog) || {}
+}
+export function saveWaterLog(log) {
+  save(KEYS.waterLog, log)
+}
+
+// User profile (BMR, NEAT, water goal)
+const DEFAULT_PROFILE = { bmr: 1880, neat: 350, waterGoal: 0 }
 export function getProfile() {
   return { ...DEFAULT_PROFILE, ...(load(KEYS.profile) || {}) }
 }
@@ -80,6 +89,7 @@ export function exportData() {
     exerciseLogs: load(KEYS.exerciseLogs) || [],
     meals: load(KEYS.meals) || [],
     nutritionLog: load(KEYS.nutritionLog) || [],
+    waterLog: load(KEYS.waterLog) || {},
     profile: load(KEYS.profile) || {},
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -98,6 +108,7 @@ export function importData(json) {
   if (data.exerciseLogs !== undefined) save(KEYS.exerciseLogs, data.exerciseLogs)
   if (data.meals !== undefined) save(KEYS.meals, data.meals)
   if (data.nutritionLog !== undefined) save(KEYS.nutritionLog, data.nutritionLog)
+  if (data.waterLog !== undefined) save(KEYS.waterLog, data.waterLog)
   if (data.profile !== undefined) save(KEYS.profile, data.profile)
 }
 

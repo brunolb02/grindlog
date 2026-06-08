@@ -4,23 +4,15 @@ import Sheet from '../components/Sheet'
 import { FormField, TextInput, NumberInput, PrimaryButton, DestructiveButton } from '../components/FormField'
 import {
   getExercises, saveExercises,
-  getMeals, saveMeals,
   getExerciseLogs, saveExerciseLogs,
-  getAiSettings,
   generateId, todayKey,
 } from '../utils/storage'
-import { fetchMacros } from '../utils/ai'
 import './Library.css'
 
 export const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Other']
-export const MEAL_CATEGORIES = ['Breakfast', 'Lunch', 'Snack', 'Dinner']
 
 function emptyExercise() {
   return { name: '', muscleGroup: 'Chest', photo: null }
-}
-
-function emptyMeal() {
-  return { name: '', aiDescription: '', calories: '', carbs: '', protein: '', fat: '', category: 'Breakfast' }
 }
 
 function emptyNormalSets() {
@@ -42,9 +34,7 @@ function formatDate(iso) {
 }
 
 export default function Library() {
-  const [tab, setTab] = useState('exercises')
   const [exercises, setExercises] = useState(getExercises)
-  const [meals, setMeals] = useState(getMeals)
   const [exerciseLogs, setExerciseLogs] = useState(getExerciseLogs)
 
   // Exercise CRUD sheet
@@ -60,21 +50,9 @@ export default function Library() {
   const [normalSets, setNormalSets] = useState(emptyNormalSets)
   const [clusterSet, setClusterSet] = useState(emptyClusterSet)
 
-  // Meal CRUD sheet
-  const [mealSheet, setMealSheet] = useState(false)
-  const [editMeal, setEditMeal] = useState(null)
-  const [mealForm, setMealForm] = useState(emptyMeal)
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiError, setAiError] = useState(null)
-  const aiSettings = getAiSettings()
-  const activeProvider = aiSettings.active
-  const activeProviderSettings = aiSettings[activeProvider]
-  const hasAiKey = !!activeProviderSettings?.key
-
   // Collapsed muscle groups
   const [collapsed, setCollapsed] = useState({})
 
-  // ─── Exercises grouped by muscle group ───────────────────────────────────
   const grouped = useMemo(() => {
     return MUSCLE_GROUPS.reduce((acc, g) => {
       acc[g] = exercises.filter(e => (e.muscleGroup || 'Other') === g)
@@ -158,155 +136,53 @@ export default function Library() {
     return clusterSet.blocks !== '' && clusterSet.weight !== ''
   }
 
-  function logsForExercise(exId) {
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - 3)
-    const cutoffStr = cutoff.toISOString()
+  function lastLogForExercise(exId) {
     return exerciseLogs
-      .filter(l => l.exerciseId === exId && l.timestamp >= cutoffStr)
-      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-  }
-
-  // ─── Meal CRUD ────────────────────────────────────────────────────────────
-  async function fillWithAi() {
-    setAiLoading(true)
-    setAiError(null)
-    try {
-      const macros = await fetchMacros(mealForm.aiDescription.trim() || mealForm.name, activeProvider, activeProviderSettings.key, activeProviderSettings.model)
-      setMealForm(f => ({
-        ...f,
-        calories: String(macros.calories),
-        carbs: String(macros.carbs),
-        protein: String(macros.protein),
-        fat: String(macros.fat),
-      }))
-    } catch (e) {
-      setAiError(e.message || 'Failed to fetch macros')
-    } finally {
-      setAiLoading(false)
-    }
-  }
-
-  function openNewMeal() {
-    setEditMeal(null)
-    setMealForm(emptyMeal())
-    setAiError(null)
-    setMealSheet(true)
-  }
-
-  function openEditMeal(meal) {
-    setEditMeal(meal)
-    setMealForm({ name: meal.name, aiDescription: '', calories: String(meal.calories), carbs: String(meal.carbs), protein: String(meal.protein), fat: String(meal.fat), category: meal.category || 'Breakfast' })
-    setAiError(null)
-    setMealSheet(true)
-  }
-
-  function saveMeal() {
-    const entry = { name: mealForm.name, calories: Number(mealForm.calories), carbs: Number(mealForm.carbs), protein: Number(mealForm.protein), fat: Number(mealForm.fat), category: mealForm.category  }
-    const updated = editMeal
-      ? meals.map(m => m.id === editMeal.id ? { ...m, ...entry } : m)
-      : [...meals, { id: generateId(), createdAt: new Date().toISOString(), ...entry }]
-    setMeals(updated)
-    saveMeals(updated)
-    setMealSheet(false)
-  }
-
-  function deleteMeal() {
-    const updated = meals.filter(m => m.id !== editMeal.id)
-    setMeals(updated)
-    saveMeals(updated)
-    setMealSheet(false)
+      .filter(l => l.exerciseId === exId)
+      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0] ?? null
   }
 
   return (
     <div className="page">
-      <PageHeader
-        title="Library"
-        action={
-          tab === 'meals'
-            ? <button className="add-btn" onClick={openNewMeal}>+ Add</button>
-            : null
-        }
-      />
-
-      <div className="seg-control">
-        <button className={tab === 'exercises' ? 'active' : ''} onClick={() => setTab('exercises')}>Exercises</button>
-        <button className={tab === 'meals' ? 'active' : ''} onClick={() => setTab('meals')}>Meals</button>
-      </div>
+      <PageHeader title="Exercises" />
 
       <div className="page-body scroll-area">
-
-        {/* ── EXERCISES ── */}
-        {tab === 'exercises' && (
-          <div className="muscle-groups">
-            {MUSCLE_GROUPS.map(group => {
-              const exList = grouped[group]
-              const isCollapsed = collapsed[group]
-              return (
-                <div key={group} className="muscle-group">
-                  <button className="group-header" onClick={() => toggleGroup(group)}>
-                    <span className="group-title">{group}</span>
-                    <div className="group-header-right">
-                      <span className="group-count">{exList.length}</span>
-                      <span className={`group-chevron ${isCollapsed ? '' : 'open'}`}>›</span>
-                    </div>
-                  </button>
-                  {!isCollapsed && (
-                    <div className="group-body">
-                      {exList.map(ex => (
-                        <div key={ex.id} className="ex-row">
-                          <button className="ex-main" onClick={() => openLog(ex)}>
-                            {ex.photo
-                              ? <img src={ex.photo} className="ex-thumb" alt="" />
-                              : <div className="ex-thumb ex-thumb-ph">💪</div>
-                            }
-                            <span className="ex-name">{ex.name}</span>
-                          </button>
-                          <button className="ex-edit-btn" onClick={() => openEditExercise(ex)}>···</button>
-                        </div>
-                      ))}
-                      <button className="add-ex-row" onClick={() => openNewExercise(group)}>
-                        + Add {group} exercise
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* ── MEALS ── */}
-        {tab === 'meals' && (
-          <>
-            {meals.length === 0 && (
-              <div className="empty-state">
-                <p>No meals yet</p>
-                <p className="empty-hint">Tap + Add to create your first meal</p>
-              </div>
-            )}
-            {MEAL_CATEGORIES.map(cat => {
-              const catMeals = meals.filter(m => (m.category || 'Breakfast') === cat)
-              if (catMeals.length === 0) return null
-              return (
-                <div key={cat} className="meal-category-group">
-                  <div className="sheet-section-label">{cat}</div>
-                  <div className="item-list">
-                    {catMeals.map(meal => (
-                      <button key={meal.id} className="list-item meal-item" onClick={() => openEditMeal(meal)}>
-                        <div className="meal-info">
-                          <span className="list-item-name">{meal.name}</span>
-                          <span className="meal-macros">{meal.calories} kcal · P {meal.protein}g · C {meal.carbs}g · F {meal.fat}g</span>
-                        </div>
-                        <span className="chevron">›</span>
-                      </button>
-                    ))}
+        <div className="muscle-groups">
+          {MUSCLE_GROUPS.map(group => {
+            const exList = grouped[group]
+            const isCollapsed = collapsed[group]
+            return (
+              <div key={group} className="muscle-group">
+                <button className="group-header" onClick={() => toggleGroup(group)}>
+                  <span className="group-title">{group}</span>
+                  <div className="group-header-right">
+                    <span className="group-count">{exList.length}</span>
+                    <span className={`group-chevron ${isCollapsed ? '' : 'open'}`}>›</span>
                   </div>
-                </div>
-              )
-            })}
-          </>
-        )}
+                </button>
+                {!isCollapsed && (
+                  <div className="group-body">
+                    {exList.map(ex => (
+                      <div key={ex.id} className="ex-row">
+                        <button className="ex-main" onClick={() => openLog(ex)}>
+                          {ex.photo
+                            ? <img src={ex.photo} className="ex-thumb" alt="" />
+                            : <div className="ex-thumb ex-thumb-ph">💪</div>
+                          }
+                          <span className="ex-name">{ex.name}</span>
+                        </button>
+                        <button className="ex-edit-btn" onClick={() => openEditExercise(ex)}>···</button>
+                      </div>
+                    ))}
+                    <button className="add-ex-row" onClick={() => openNewExercise(group)}>
+                      + Add {group} exercise
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* ── Exercise CRUD sheet ── */}
@@ -340,25 +216,22 @@ export default function Library() {
 
       {/* ── Exercise log sheet ── */}
       <Sheet open={logSheet} onClose={() => setLogSheet(false)} title={activeEx?.name}>
-        {/* Recent logs for this exercise */}
-        {activeEx && logsForExercise(activeEx.id).length > 0 && (
-          <div className="recent-logs">
-            <div className="recent-logs-title">Recent</div>
-            {logsForExercise(activeEx.id).map(log => (
-              <div key={log.id} className="log-entry">
-                <span className="log-date">{formatDate(log.timestamp)}</span>
-                <div className="log-sets">
-                  {log.type === 'normal'
-                    ? log.sets.map((s, i) => <span key={i} className="log-set">Set {i+1}: {s.weight}kg × {s.reps}</span>)
-                    : <span className="log-set cluster">{formatCluster(log.sets)}</span>
-                  }
-                </div>
+        {activeEx && (() => {
+          const last = lastLogForExercise(activeEx.id)
+          if (!last) return null
+          return (
+            <div className="recent-logs">
+              <div className="recent-logs-title">Last session — {formatDate(last.timestamp)}</div>
+              <div className="log-sets">
+                {last.type === 'normal'
+                  ? last.sets.map((s, i) => <span key={i} className="log-set">Set {i+1}: {s.weight}kg × {s.reps}</span>)
+                  : <span className="log-set cluster">{formatCluster(last.sets)}</span>
+                }
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          )
+        })()}
 
-        {/* Set type toggle */}
         <div className="set-type-toggle">
           <button className={setType === 'normal' ? 'active' : ''} onClick={() => setSetType('normal')}>Normal Set</button>
           <button className={setType === 'cluster' ? 'active' : ''} onClick={() => setSetType('cluster')}>Cluster Set</button>
@@ -424,67 +297,6 @@ export default function Library() {
         >
           Log Sets
         </PrimaryButton>
-      </Sheet>
-
-      {/* ── Meal CRUD sheet ── */}
-      <Sheet open={mealSheet} onClose={() => setMealSheet(false)} title={editMeal ? 'Edit Meal' : 'New Meal'}>
-        <FormField label="Meal Name">
-          <TextInput value={mealForm.name} onChange={v => setMealForm(f => ({ ...f, name: v }))} placeholder="e.g. Chicken & Rice" />
-        </FormField>
-        {hasAiKey && (
-          <FormField label="AI Description (optional)">
-            <TextInput
-              value={mealForm.aiDescription}
-              onChange={v => setMealForm(f => ({ ...f, aiDescription: v }))}
-              placeholder="e.g. 6 magic toast Lev de cacau"
-            />
-          </FormField>
-        )}
-        {hasAiKey ? (
-          <div className="ai-fill-row">
-            <button
-              className="ai-fill-btn"
-              onClick={fillWithAi}
-              disabled={!mealForm.name.trim() || aiLoading}
-            >
-              {aiLoading ? 'Filling…' : '✦ Fill macros with AI'}
-            </button>
-            {aiError && <span className="ai-fill-error">{aiError}</span>}
-          </div>
-        ) : (
-          <p className="ai-setup-hint">
-            ✦ Set up a free Gemini API key in <strong>Dashboard → ⚙</strong> to auto-fill macros with AI
-          </p>
-        )}
-        <FormField label="Category">
-          <div className="muscle-picker">
-            {MEAL_CATEGORIES.map(c => (
-              <button
-                key={c}
-                className={`muscle-chip ${mealForm.category === c ? 'active' : ''}`}
-                onClick={() => setMealForm(f => ({ ...f, category: c }))}
-              >{c}</button>
-            ))}
-          </div>
-        </FormField>
-        <FormField label="Calories (kcal)">
-          <NumberInput value={mealForm.calories} onChange={v => setMealForm(f => ({ ...f, calories: v }))} placeholder="0" min="0" />
-        </FormField>
-        <div className="macro-row">
-          <FormField label="Carbs (g)">
-            <NumberInput value={mealForm.carbs} onChange={v => setMealForm(f => ({ ...f, carbs: v }))} placeholder="0" min="0" />
-          </FormField>
-          <FormField label="Protein (g)">
-            <NumberInput value={mealForm.protein} onChange={v => setMealForm(f => ({ ...f, protein: v }))} placeholder="0" min="0" />
-          </FormField>
-          <FormField label="Fat (g)">
-            <NumberInput value={mealForm.fat} onChange={v => setMealForm(f => ({ ...f, fat: v }))} placeholder="0" min="0" />
-          </FormField>
-        </div>
-        <PrimaryButton onClick={saveMeal} disabled={!mealForm.name.trim() || !mealForm.calories}>
-          {editMeal ? 'Save Changes' : 'Add Meal'}
-        </PrimaryButton>
-        {editMeal && <DestructiveButton onClick={deleteMeal}>Delete Meal</DestructiveButton>}
       </Sheet>
     </div>
   )
