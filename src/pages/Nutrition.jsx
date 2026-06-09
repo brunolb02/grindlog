@@ -387,31 +387,6 @@ export default function Nutrition() {
                 ✦ Set up a free Gemini API key in <strong>Dashboard → ⚙</strong> to auto-fill macros with AI
               </p>
             )}
-            <FormField label="Category">
-              <div className="muscle-picker">
-                {MEAL_CATEGORIES.map(c => (
-                  <button
-                    key={c}
-                    className={`muscle-chip ${mealForm.category === c ? 'active' : ''}`}
-                    onClick={() => setMealForm(f => ({ ...f, category: c }))}
-                  >{c}</button>
-                ))}
-              </div>
-            </FormField>
-            <FormField label="Calories (kcal)">
-              <NumberInput value={mealForm.calories} onChange={v => setMealForm(f => ({ ...f, calories: v }))} placeholder="0" min="0" />
-            </FormField>
-            <div className="macro-row">
-              <FormField label="Carbs (g)">
-                <NumberInput value={mealForm.carbs} onChange={v => setMealForm(f => ({ ...f, carbs: v }))} placeholder="0" min="0" />
-              </FormField>
-              <FormField label="Protein (g)">
-                <NumberInput value={mealForm.protein} onChange={v => setMealForm(f => ({ ...f, protein: v }))} placeholder="0" min="0" />
-              </FormField>
-              <FormField label="Fat (g)">
-                <NumberInput value={mealForm.fat} onChange={v => setMealForm(f => ({ ...f, fat: v }))} placeholder="0" min="0" />
-              </FormField>
-            </div>
             <FormField label="Time">
               <div className="activity-picker">
                 <button
@@ -437,6 +412,31 @@ export default function Nutrition() {
                 />
               </FormField>
             )}
+            <FormField label="Category">
+              <div className="muscle-picker">
+                {MEAL_CATEGORIES.map(c => (
+                  <button
+                    key={c}
+                    className={`muscle-chip ${mealForm.category === c ? 'active' : ''}`}
+                    onClick={() => setMealForm(f => ({ ...f, category: c }))}
+                  >{c}</button>
+                ))}
+              </div>
+            </FormField>
+            <FormField label="Calories (kcal)">
+              <NumberInput value={mealForm.calories} onChange={v => setMealForm(f => ({ ...f, calories: v }))} placeholder="0" min="0" />
+            </FormField>
+            <div className="macro-row">
+              <FormField label="Carbs (g)">
+                <NumberInput value={mealForm.carbs} onChange={v => setMealForm(f => ({ ...f, carbs: v }))} placeholder="0" min="0" />
+              </FormField>
+              <FormField label="Protein (g)">
+                <NumberInput value={mealForm.protein} onChange={v => setMealForm(f => ({ ...f, protein: v }))} placeholder="0" min="0" />
+              </FormField>
+              <FormField label="Fat (g)">
+                <NumberInput value={mealForm.fat} onChange={v => setMealForm(f => ({ ...f, fat: v }))} placeholder="0" min="0" />
+              </FormField>
+            </div>
             <div className="log-action-row">
               <button
                 className="log-only-btn"

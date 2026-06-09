@@ -240,27 +240,60 @@ export default function Dashboard() {
           />
         </FormField>
         <div className="settings-section-title">AI Integration</div>
-        <FormField label="Gemini API Key">
-          <TextInput
-            value={aiForm.gemini.key}
-            onChange={v => setAiForm(f => ({ ...f, gemini: { ...f.gemini, key: v } }))}
-            placeholder="Paste your Gemini API key…"
-            type="password"
-          />
-        </FormField>
-        <FormField label="Model">
+        <FormField label="Provider">
           <SelectInput
-            value={aiForm.gemini.model}
-            onChange={v => setAiForm(f => ({ ...f, gemini: { ...f.gemini, model: v } }))}
-            options={PROVIDERS.gemini.models}
+            value={aiForm.active}
+            onChange={v => setAiForm(f => ({ ...f, active: v }))}
+            options={[
+              { id: 'gemini', label: 'Gemini (Google AI Studio)' },
+              { id: 'openai', label: 'ChatGPT (OpenAI)' },
+            ]}
           />
         </FormField>
-        <p className="settings-hint">
-          Free tier available — no credit card needed.{' '}
-          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="settings-hint-link">
-            Get your API key at Google AI Studio.
-          </a>
-        </p>
+        {aiForm.active === 'gemini' && <>
+          <FormField label="Gemini API Key">
+            <TextInput
+              value={aiForm.gemini.key}
+              onChange={v => setAiForm(f => ({ ...f, gemini: { ...f.gemini, key: v } }))}
+              placeholder="Paste your Gemini API key…"
+              type="password"
+            />
+          </FormField>
+          <FormField label="Model">
+            <SelectInput
+              value={aiForm.gemini.model}
+              onChange={v => setAiForm(f => ({ ...f, gemini: { ...f.gemini, model: v } }))}
+              options={PROVIDERS.gemini.models}
+            />
+          </FormField>
+          <p className="settings-hint">
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="settings-hint-link">
+              Get your API key at Google AI Studio.
+            </a>
+          </p>
+        </>}
+        {aiForm.active === 'openai' && <>
+          <FormField label="OpenAI API Key">
+            <TextInput
+              value={aiForm.openai.key}
+              onChange={v => setAiForm(f => ({ ...f, openai: { ...f.openai, key: v } }))}
+              placeholder="Paste your OpenAI API key…"
+              type="password"
+            />
+          </FormField>
+          <FormField label="Model">
+            <SelectInput
+              value={aiForm.openai.model}
+              onChange={v => setAiForm(f => ({ ...f, openai: { ...f.openai, model: v } }))}
+              options={PROVIDERS.openai.models}
+            />
+          </FormField>
+          <p className="settings-hint">
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="settings-hint-link">
+              Get your API key at OpenAI Platform.
+            </a>
+          </p>
+        </>}
         <p className="settings-hint">API key is stored only on your device.</p>
         <PrimaryButton onClick={saveSettings} disabled={!canSaveSettings}>
           Save

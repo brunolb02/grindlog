@@ -116,6 +116,7 @@ export function importData(json) {
 const DEFAULT_AI_SETTINGS = {
   active: 'gemini',
   gemini: { key: '', model: 'gemini-2.5-flash' },
+  openai: { key: '', model: 'gpt-4o-mini' },
 }
 
 export function getAiSettings() {
@@ -123,16 +124,17 @@ export function getAiSettings() {
   // migrate old single gemini key if present
   const legacyKey = localStorage.getItem('gl_gemini_key')
   if (!stored && legacyKey) {
-    const migrated = { ...DEFAULT_AI_SETTINGS, gemini: { key: legacyKey, model: 'gemini-2.0-flash' } }
+    const migrated = { ...DEFAULT_AI_SETTINGS, gemini: { key: legacyKey, model: 'gemini-2.5-flash' } }
     save(KEYS.aiSettings, migrated)
     localStorage.removeItem('gl_gemini_key')
     return migrated
   }
   const merged = { ...DEFAULT_AI_SETTINGS, ...stored }
-  // migrate to gemini-only setup and update deprecated model IDs
-  if (merged.active !== 'gemini') merged.active = 'gemini'
+  // ensure openai defaults exist for users upgrading from older storage
+  if (!merged.openai) merged.openai = { key: '', model: 'gpt-4o-mini' }
+  // update deprecated gemini model IDs
   if (!merged.gemini?.model?.startsWith('gemini-2.5')) {
-    merged.gemini.model = 'gemini-2.5-flash'
+    merged.gemini = { ...merged.gemini, model: 'gemini-2.5-flash' }
   }
   return merged
 }

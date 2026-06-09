@@ -9,6 +9,16 @@ export const PROVIDERS = {
     ],
     defaultModel: 'gemini-2.5-flash',
   },
+  openai: {
+    name: 'ChatGPT',
+    format: 'openai',
+    url: 'https://api.openai.com/v1/chat/completions',
+    models: [
+      { id: 'gpt-4o-mini', label: 'GPT-4o mini (cheapest)' },
+      { id: 'gpt-4o', label: 'GPT-4o' },
+    ],
+    defaultModel: 'gpt-4o-mini',
+  },
 }
 
 export const PROVIDER_IDS = Object.keys(PROVIDERS)
