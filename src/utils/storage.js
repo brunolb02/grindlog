@@ -19,7 +19,11 @@ function load(key) {
 }
 
 function save(key, value) {
-  localStorage.setItem(key, JSON.stringify(value))
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch (e) {
+    console.error('Storage save failed:', key, e)
+  }
 }
 
 // Exercises
