@@ -384,7 +384,7 @@ export default function Nutrition() {
               </div>
             ) : (
               <p className="ai-setup-hint">
-                ✦ Set up a free Gemini API key in <strong>Dashboard → ⚙</strong> to auto-fill macros with AI
+                ✦ Set up a Gemini or ChatGPT API key in <strong>Dashboard → ⚙</strong> to auto-fill macros with AI
               </p>
             )}
             <FormField label="Time">
@@ -440,13 +440,13 @@ export default function Nutrition() {
             <div className="log-action-row">
               <button
                 className="log-only-btn"
-                onClick={() => createAndLog(false)}
+                onClick={() => createAndLog(true)}
                 disabled={!mealForm.name.trim() || !mealForm.calories}
               >
-                {timeMode === 'custom' ? 'Log' : 'Log Now'}
+                Save & Log
               </button>
-              <PrimaryButton onClick={() => createAndLog(true)} disabled={!mealForm.name.trim() || !mealForm.calories}>
-                {timeMode === 'custom' ? 'Save & Log' : 'Save & Log'}
+              <PrimaryButton onClick={() => createAndLog(false)} disabled={!mealForm.name.trim() || !mealForm.calories}>
+                {timeMode === 'custom' ? 'Log' : 'Log Now'}
               </PrimaryButton>
             </div>
           </>
@@ -476,7 +476,11 @@ export default function Nutrition() {
                 </button>
                 {aiError && <span className="ai-fill-error">{aiError}</span>}
               </div>
-            ) : null}
+            ) : (
+              <p className="ai-setup-hint">
+                ✦ Set up a Gemini or ChatGPT API key in <strong>Dashboard → ⚙</strong> to auto-fill macros with AI
+              </p>
+            )}
             <FormField label="Category">
               <div className="muscle-picker">
                 {MEAL_CATEGORIES.map(c => (
