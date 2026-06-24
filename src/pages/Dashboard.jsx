@@ -311,6 +311,13 @@ export default function Dashboard() {
         <input ref={importRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImport} />
         {importSuccess && <p className="import-success">Restored! Reloading…</p>}
         {importError && <p className="import-error">{importError}</p>}
+
+        <div className="settings-section-title">App</div>
+        <button className="settings-action-btn" onClick={() => window.location.reload()}>
+          Reload app
+          <span className="settings-action-hint">Force-loads the latest version — use if the app feels stuck or outdated</span>
+        </button>
+        <p className="settings-hint" style={{ marginTop: 4 }}>Version: {__APP_VERSION__}</p>
       </Sheet>
     </div>
   )
