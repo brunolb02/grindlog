@@ -122,9 +122,11 @@ export default function Library() {
         ? normalSets.map(s => ({ weight: Number(s.weight), reps: Number(s.reps) }))
         : { blocks: Number(clusterSet.blocks), weight: Number(clusterSet.weight), failReps: clusterSet.failReps !== '' ? Number(clusterSet.failReps) : null },
     }
-    const updated = [...exerciseLogs, entry]
-    setExerciseLogs(updated)
-    saveExerciseLogs(updated)
+    setExerciseLogs(prev => {
+      const updated = [...prev, entry]
+      saveExerciseLogs(updated)
+      return updated
+    })
     setLogSheet(false)
   }
 

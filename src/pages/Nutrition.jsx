@@ -121,9 +121,11 @@ export default function Nutrition() {
       date,
       timestamp,
     }
-    const updated = [...log, entry]
-    setLog(updated)
-    saveNutritionLog(updated)
+    setLog(prev => {
+      const updated = [...prev, entry]
+      saveNutritionLog(updated)
+      return updated
+    })
     setSheetOpen(false)
   }
 
@@ -199,9 +201,11 @@ export default function Nutrition() {
       category: mealForm.category,
     }
     if (saveToHistory) {
-      const updatedMeals = [...meals, newMeal]
-      setMeals(updatedMeals)
-      saveMeals(updatedMeals)
+      setMeals(prev => {
+        const updated = [...prev, newMeal]
+        saveMeals(updated)
+        return updated
+      })
     }
     addMeal(newMeal)
   }

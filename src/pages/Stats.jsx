@@ -159,7 +159,6 @@ function StatChip({ label, value, color }) {
 
 export default function Stats() {
   const [period, setPeriod] = useState('7')
-  const [activeMuscle, setActiveMuscle] = useState(MUSCLE_GROUPS[0])
   const [expandedEx, setExpandedEx] = useState(null)
 
   const [nutritionLog] = useState(getNutritionLog)
@@ -168,6 +167,17 @@ export default function Stats() {
   const [exercises] = useState(getExercises)
   const [profile] = useState(getProfile)
   const [waterLog] = useState(getWaterLog)
+
+  const [activeMuscle, setActiveMuscle] = useState(() => {
+    const logs = getExerciseLogs()
+    const exs = getExercises()
+    if (logs.length > 0) {
+      const lastLog = [...logs].sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0]
+      const ex = exs.find(e => e.id === lastLog.exerciseId)
+      if (ex && MUSCLE_GROUPS.includes(ex.muscleGroup)) return ex.muscleGroup
+    }
+    return MUSCLE_GROUPS[0]
+  })
 
   const daySlots = useMemo(() => {
     if (period === '7') return getDaySlots(7)
